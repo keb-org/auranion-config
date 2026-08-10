@@ -11,7 +11,8 @@ if [ "$OS" = "Darwin" ]; then
     if [ "$ARCH" = "arm64" ]; then
         ASSET="auranion-macos-arm64"
     else
-        ASSET="auranion-macos-amd64"
+        echo "Intel Mac unsupported. Only Apple Silicon (arm64) supported."
+        exit 1
     fi
 elif [ "$OS" = "Linux" ]; then
     ASSET="auranion-linux-amd64"
