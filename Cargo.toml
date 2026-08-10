@@ -1,0 +1,18 @@
+[package]
+name = "auranion"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4.5", features = ["derive"] }
+crossterm = "0.29"
+dialoguer = "0.12"
+directories = "6"
+keyring = "4.1"
+ratatui = "0.30"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+self-replace = "1.5.0"
+toml_edit = "0.25"
+ureq = { version = "2.10", features = ["json"] }
