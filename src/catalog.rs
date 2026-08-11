@@ -6,11 +6,10 @@ pub struct Model {
     pub desktop_alias: &'static str,
     /// Friendly display label used in UI lists.
     pub desktop_label: &'static str,
-    /// Model ID returned in /v1/models for ChatGPT Desktop (Codex) MITM proxy.
-    /// Designed to produce clear, unique, non-overlapping names in the app's
-    /// model selector. Avoids version-number patterns that the app truncates
-    /// (e.g. "5.6", "5.5", "3.6") in favor of provider+name identifiers.
-    pub codex_alias: &'static str,
+    /// Native alias accepted by ChatGPT / Codex Desktop.
+    pub codex_desktop_alias: &'static str,
+    /// Reasoning controls exposed by ChatGPT / Codex Desktop for this alias.
+    pub codex_desktop_reasoning_efforts: &'static [&'static str],
     pub score: Option<u8>,
     pub context: Option<u64>,
     pub output: Option<u64>,
@@ -31,10 +30,10 @@ pub struct Model {
 }
 
 pub const DEFAULT_MODEL: &str = "cx/gpt-5.6-sol";
-pub const FABLE_MODEL: &str = "cx/gpt-5.6-luna";
-pub const OPUS_MODEL: &str = "cx/gpt-5.6-sol";
-pub const SONNET_MODEL: &str = "cx/gpt-5.6-terra";
-pub const HAIKU_MODEL: &str = "cmc/deepseek/deepseek-v4-flash";
+pub const FABLE_MODEL: &str = "cx/gpt-5.6-sol";
+pub const OPUS_MODEL: &str = "cx/gpt-5.6-terra";
+pub const SONNET_MODEL: &str = "cx/gpt-5.6-luna";
+pub const HAIKU_MODEL: &str = "ag/gemini-3.6-flash-tiered";
 
 pub const MODELS: &[Model] = &[
     Model {
@@ -42,7 +41,8 @@ pub const MODELS: &[Model] = &[
         label: "GPT 5.6 Sol",
         desktop_alias: "claude-opus-4-8",
         desktop_label: "GPT 5.6 Sol",
-        codex_alias: "GPTSol",
+        codex_desktop_alias: "gpt-5.6-sol",
+        codex_desktop_reasoning_efforts: &["low", "medium", "high", "xhigh", "max", "ultra"],
         score: Some(59),
         context: Some(372_000),
         output: Some(128_000),
@@ -59,7 +59,8 @@ pub const MODELS: &[Model] = &[
         label: "GPT 5.6 Terra",
         desktop_alias: "claude-opus-4-7",
         desktop_label: "GPT 5.6 Terra",
-        codex_alias: "GPTTerra",
+        codex_desktop_alias: "gpt-5.6-terra",
+        codex_desktop_reasoning_efforts: &["low", "medium", "high", "xhigh", "max", "ultra"],
         score: Some(56),
         context: Some(272_000),
         output: Some(128_000),
@@ -76,7 +77,8 @@ pub const MODELS: &[Model] = &[
         label: "GPT 5.6 Luna",
         desktop_alias: "claude-opus-4-6",
         desktop_label: "GPT 5.6 Luna",
-        codex_alias: "GPTLuna",
+        codex_desktop_alias: "gpt-5.6-luna",
+        codex_desktop_reasoning_efforts: &["low", "medium", "high", "xhigh", "max"],
         score: Some(51),
         context: Some(272_000),
         output: Some(128_000),
@@ -93,7 +95,8 @@ pub const MODELS: &[Model] = &[
         label: "Qwen 3.8 Max",
         desktop_alias: "claude-opus-4-5-20251101",
         desktop_label: "Qwen 3.8 Max",
-        codex_alias: "QwenMax38",
+        codex_desktop_alias: "gpt-5.5",
+        codex_desktop_reasoning_efforts: &[],
         score: Some(57),
         context: Some(1_000_000),
         output: Some(65_536),
@@ -110,7 +113,8 @@ pub const MODELS: &[Model] = &[
         label: "Gemini 3.6 Flash",
         desktop_alias: "claude-sonnet-4-6",
         desktop_label: "Gemini 3.6 Flash",
-        codex_alias: "GeminiFlash36",
+        codex_desktop_alias: "gpt-5.4",
+        codex_desktop_reasoning_efforts: &["low", "medium", "high"],
         score: Some(50),
         context: Some(1_048_576),
         output: Some(65_536),
@@ -127,7 +131,8 @@ pub const MODELS: &[Model] = &[
         label: "DeepSeek V4 Flash",
         desktop_alias: "claude-haiku-4-5-20251001",
         desktop_label: "DeepSeek V4 Flash",
-        codex_alias: "DeepSeekV4",
+        codex_desktop_alias: "gpt-5.4-mini",
+        codex_desktop_reasoning_efforts: &[],
         score: Some(50),
         context: Some(1_000_000),
         output: Some(384_000),
@@ -150,8 +155,19 @@ mod tests {
         MODELS.iter().find(|model| model.desktop_alias == alias)
     }
 
-    fn by_codex_alias(alias: &str) -> Option<&'static Model> {
-        MODELS.iter().find(|model| model.codex_alias == alias)
+    fn by_codex_desktop_alias(alias: &str) -> Option<&'static Model> {
+        MODELS
+            .iter()
+            .find(|model| model.codex_desktop_alias == alias)
+    }
+
+    #[test]
+    fn claude_code_roles_match_gateway_tiers() {
+        assert_eq!(DEFAULT_MODEL, "cx/gpt-5.6-sol");
+        assert_eq!(FABLE_MODEL, "cx/gpt-5.6-sol");
+        assert_eq!(OPUS_MODEL, "cx/gpt-5.6-terra");
+        assert_eq!(SONNET_MODEL, "cx/gpt-5.6-luna");
+        assert_eq!(HAIKU_MODEL, "ag/gemini-3.6-flash-tiered");
     }
 
     #[test]
@@ -197,19 +213,6 @@ mod tests {
             assert!(!model.desktop_alias.contains("claude-5"));
             assert_eq!(by_desktop_alias(model.desktop_alias), Some(model));
             assert_eq!(model.desktop_label, model.label);
-        }
-    }
-
-    #[test]
-    fn codex_aliases_are_unique() {
-        let aliases: HashSet<_> = MODELS.iter().map(|model| model.codex_alias).collect();
-        assert_eq!(
-            aliases.len(),
-            MODELS.len(),
-            "codex_aliases must all be unique"
-        );
-        for model in MODELS {
-            assert_eq!(by_codex_alias(model.codex_alias), Some(model));
         }
     }
 
@@ -341,6 +344,58 @@ mod tests {
                 model.reasoning_efforts, efforts,
                 "{} effort set mismatch",
                 model.label
+            );
+        }
+    }
+
+    #[test]
+    fn codex_desktop_aliases_route_to_verified_targets() {
+        let expected = [
+            ("gpt-5.6-sol", "cx/gpt-5.6-sol"),
+            ("gpt-5.6-terra", "cx/gpt-5.6-terra"),
+            ("gpt-5.6-luna", "cx/gpt-5.6-luna"),
+            ("gpt-5.5", "alibaba/qwen3.8-max"),
+            ("gpt-5.4", "ag/gemini-3.6-flash-tiered"),
+            ("gpt-5.4-mini", "cmc/deepseek/deepseek-v4-flash"),
+        ];
+        let aliases: HashSet<_> = MODELS
+            .iter()
+            .map(|model| model.codex_desktop_alias)
+            .collect();
+
+        assert_eq!(aliases.len(), MODELS.len());
+        for (alias, upstream) in expected {
+            assert_eq!(
+                by_codex_desktop_alias(alias).map(|model| model.upstream),
+                Some(upstream)
+            );
+        }
+    }
+
+    #[test]
+    fn codex_desktop_efforts_match_verified_native_contracts() {
+        let expected = [
+            (
+                "gpt-5.6-sol",
+                &["low", "medium", "high", "xhigh", "max", "ultra"] as &[&str],
+            ),
+            (
+                "gpt-5.6-terra",
+                &["low", "medium", "high", "xhigh", "max", "ultra"],
+            ),
+            ("gpt-5.6-luna", &["low", "medium", "high", "xhigh", "max"]),
+            ("gpt-5.5", &[]),
+            ("gpt-5.4", &["low", "medium", "high"]),
+            ("gpt-5.4-mini", &[]),
+        ];
+
+        for (alias, efforts) in expected {
+            assert_eq!(
+                by_codex_desktop_alias(alias)
+                    .expect("verified alias missing")
+                    .codex_desktop_reasoning_efforts,
+                efforts,
+                "{alias} effort set mismatch"
             );
         }
     }

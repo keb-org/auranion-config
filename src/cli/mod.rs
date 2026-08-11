@@ -20,6 +20,8 @@ enum Command {
     Status,
     /// Update binary to latest release from GitHub.
     Update,
+    #[command(hide = true)]
+    ProviderToken,
 }
 
 pub fn run() -> Result<()> {
@@ -28,5 +30,6 @@ pub fn run() -> Result<()> {
         Command::Config { apply: false } => config::configure(),
         Command::Status => config::status(),
         Command::Update => update::run(),
+        Command::ProviderToken => config::print_provider_token(),
     }
 }

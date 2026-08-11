@@ -74,8 +74,6 @@ fn target_asset_name() -> Result<&'static str> {
         Ok("auranion-windows-amd64.exe")
     } else if cfg!(all(target_os = "macos", target_arch = "aarch64")) {
         Ok("auranion-macos-arm64")
-    } else if cfg!(all(target_os = "macos", target_arch = "x86_64")) {
-        Ok("auranion-macos-amd64")
     } else if cfg!(all(target_os = "linux", target_arch = "x86_64")) {
         Ok("auranion-linux-amd64")
     } else {

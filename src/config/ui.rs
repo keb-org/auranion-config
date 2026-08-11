@@ -10,8 +10,8 @@ use ratatui::{
 use super::integration::Integration;
 
 pub(super) fn select_integrations(
-    detected: &[bool; 4],
-    defaults: &[bool; 4],
+    detected: &[bool; 5],
+    defaults: &[bool; 5],
 ) -> Result<Vec<Integration>> {
     ratatui::run(|terminal| {
         let mut selected = *defaults;
@@ -42,12 +42,10 @@ pub(super) fn select_integrations(
                 frame.render_widget(header, chunks[0]);
 
                 // Split Body: Left List (40%), Right Info Panel (60%)
-                let body_chunks = Layout::horizontal([
-                    Constraint::Percentage(42),
-                    Constraint::Percentage(58),
-                ])
-                .spacing(1)
-                .split(chunks[1]);
+                let body_chunks =
+                    Layout::horizontal([Constraint::Percentage(42), Constraint::Percentage(58)])
+                        .spacing(1)
+                        .split(chunks[1]);
 
                 // Left: Integration List
                 let items: Vec<ListItem> = Integration::ALL
@@ -115,7 +113,8 @@ pub(super) fn select_integrations(
                 let is_detected = detected[cursor];
                 let is_selected = selected[cursor];
 
-                let detail_text = get_integration_details(current_integration, is_detected, is_selected);
+                let detail_text =
+                    get_integration_details(current_integration, is_detected, is_selected);
                 let details_panel = Paragraph::new(detail_text)
                     .wrap(Wrap { trim: false })
                     .block(
@@ -417,11 +416,14 @@ fn get_integration_details<'a>(
         Integration::ClaudeCode => {
             lines.push(Line::from("  • ~/.claude/settings.json (env)"));
         }
-        Integration::Codex => {
+        Integration::CodexDesktop => {
             lines.push(Line::from("  • ~/.codex/config.toml"));
-            lines.push(Line::from("  • ~/.codex/auth.json (auth_mode = \"apikey\")"));
             lines.push(Line::from("  • ~/.codex/model-catalogs/auranion.json"));
             lines.push(Line::from("  • ~/.codex/desktop-model-providers.json"));
+        }
+        Integration::CodexCli => {
+            lines.push(Line::from("  • ~/.codex/config.toml"));
+            lines.push(Line::from("  • ~/.codex/model-catalogs/auranion.json"));
         }
         Integration::OpenCode => {
             lines.push(Line::from("  • ~/.config/opencode/opencode.jsonc"));
@@ -430,16 +432,28 @@ fn get_integration_details<'a>(
     }
 
     lines.push(Line::from(""));
-    lines.push(Line::from(Span::styled(
-        "* Models will be added",
-        Style::default().fg(Color::Green).bold(),
-    )));
-
-    for model in crate::catalog::MODELS {
-        lines.push(Line::from(format!(
-            "  • {} ({})",
-            model.upstream, model.label
-        )));
+    match integration {
+        Integration::CodexDesktop => {
+            lines.push(Line::from(Span::styled(
+                "* App alias → Auranion target",
+                Style::default().fg(Color::Green).bold(),
+            )));
+            for (alias, target) in super::codex_desktop_routes() {
+                lines.push(Line::from(format!("  • {alias} → {target}")));
+            }
+        }
+        _ => {
+            lines.push(Line::from(Span::styled(
+                "* Models will be added",
+                Style::default().fg(Color::Green).bold(),
+            )));
+            for model in crate::catalog::MODELS {
+                lines.push(Line::from(format!(
+                    "  • {} ({})",
+                    model.upstream, model.label
+                )));
+            }
+        }
     }
 
     Text::from(lines)
