@@ -20,6 +20,8 @@ pub(super) struct State {
     pub(super) baselines: BTreeMap<String, Baseline>,
     pub(super) generated: BTreeMap<String, PathBuf>,
     pub(super) desktop_config: Option<PathBuf>,
+    pub(super) desktop_owned_meta: Option<PathBuf>,
+    pub(super) desktop_consumer_config: Option<PathBuf>,
     pub(super) startup_artifact: Option<PathBuf>,
     pub(super) codex_home: Option<PathBuf>,
     codex_transaction: Option<CodexTransaction>,

@@ -654,10 +654,10 @@ fn restore_legacy_config(config: &Path, providers: &Path, state: &State) -> Resu
         return Ok(());
     };
     write_toml(config, &document)?;
-    if is_legacy_desktop_providers(providers) {
-        if let Some(write) = restore_file_write(providers, state)? {
-            apply_writes(vec![write])?;
-        }
+    if is_legacy_desktop_providers(providers)
+        && let Some(write) = restore_file_write(providers, state)?
+    {
+        apply_writes(vec![write])?;
     }
     Ok(())
 }
