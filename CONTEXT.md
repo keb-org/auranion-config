@@ -11,7 +11,7 @@ This document records the durable state, decisions, and verified facts for the `
 - Dependencies: `anyhow`, `clap`, `crossterm 0.29`, `dialoguer`, `directories`, `keyring`, `ratatui 0.30`, `serde`, `serde_json`, `toml_edit`.
 - Interactive integration picker is Ratatui; saved-key confirm and password entry stay native (Dialoguer).
 
-## Canonical six models (order is user priority)
+## Canonical seven models (order is user priority)
 
 1. `cx/gpt-5.6-sol` — GPT 5.6 Sol — context 372k, output 128k, vision
 2. `cx/gpt-5.6-terra` — GPT 5.6 Terra — context 272k, output 128k, vision
@@ -19,6 +19,7 @@ This document records the durable state, decisions, and verified facts for the `
 4. `alibaba/qwen3.8-max` — Qwen 3.8 Max — context 1M, output 64k, no vision
 5. `ag/gemini-3.6-flash-tiered` — Gemini 3.6 Flash — context 1M, output 64k, vision/audio/video
 6. `cmc/deepseek/deepseek-v4-flash` — DeepSeek V4 Flash — context 1M, output 384k, no vision
+7. `cmc/meta/muse-spark-1.2-contributor` — Muse Spark 1.2 — context 1M, output 128k, vision/audio/video
 
 Retired (must never reappear in profiles): Poolside Laguna S 2.1, Poolside Laguna XS 2.1, GLM 5.2, DeepSeek V4 Pro, Qwen 3.7 Plus, Qwen 3.6 Flash.
 
@@ -27,7 +28,8 @@ Retired (must never reappear in profiles): Poolside Laguna S 2.1, Poolside Lagun
 - GPT-5.6 Sol / Terra / Luna: `none, minimal, low, medium, high, xhigh, max`
 - Gemini 3.6 Flash: `low, medium, high`
 - Qwen 3.8 Max: no effort control
-- DeepSeek V4 Flash: no effort control
+- DeepSeek V4 Flash: `low, high, max` (thinking on by default at `high`; no off-toggle)
+- Muse Spark 1.2: `minimal, low, medium, high, xhigh` (`none` returns HTTP 400)
 
 Model-level `max` = "Ultra" picker label. `ultra`/`ultracode` are app-level, never model options.
 
@@ -53,8 +55,9 @@ Claude Desktop picker routes (verified effort mapping):
 - Qwen 3.8 Max → `claude-opus-4-5-20251101`
 - Gemini 3.6 Flash → `claude-sonnet-4-6`
 - DeepSeek V4 Flash → `claude-haiku-4-5-20251001`
+- Muse Spark 1.2 → `claude-sonnet-4-5-20250920`
 
-Effort-capable desktop aliases (render Effort control): opus 4.8/4.7/4.6/4.5-20251101, sonnet 4.6. DeepSeek route is not effort-capable; catalog carries `forced_effort: Some("max")`.
+Effort-capable desktop aliases (render Effort control): opus 4.8/4.7/4.6/4.5-20251101, sonnet 4.6. Non-effort-capable routes carry `forced_effort`: DeepSeek `Some("max")`, Muse Spark `Some("high")`.
 
 Verified end-to-end: `claude-opus-4-8` returns upstream `gpt-5.6-sol`; `claude-sonnet-4-6` streams SSE HTTP 200.
 
@@ -80,7 +83,7 @@ Rules:
 
 ## OpenCode
 
-Writes `~/.config/opencode/opencode.jsonc` (or `%USERPROFILE%\.config\opencode\opencode.jsonc` on Windows). Merges `provider.auranion` JSON with `name: Auranion`, `npm: @ai-sdk/openai-compatible`, `options.baseURL`, and per-model entries with `variants` from the effort contract. Qwen/DeepSeek have no `variants`.
+Writes `~/.config/opencode/opencode.jsonc` (or `%USERPROFILE%\.config\opencode\opencode.jsonc` on Windows). Merges `provider.auranion` JSON with `name: Auranion`, `npm: @ai-sdk/openai-compatible`, `options.baseURL`, and per-model entries with `variants` from the effort contract. Qwen has no `variants`; DeepSeek variants are `low`/`high`/`max`.
 
 `merge_opencode` is JSON-based and idempotent. It collapses duplicate `auranion` keys (previous string-merge corrupted the file with 22 stacked blocks; fixed). Auth via `~/.local/share/opencode/auth.json` `auranion` entry.
 

@@ -10,6 +10,7 @@ Verified native aliases for Auranion configuration:
 | `gpt-5.5` | `alibaba/qwen3.8-max` |
 | `gpt-5.4` | `ag/gemini-3.6-flash-tiered` |
 | `gpt-5.4-mini` | `cmc/deepseek/deepseek-v4-flash` |
+| `muse-spark-1.2` | `cmc/meta/muse-spark-1.2-contributor` |
 
 Desktop effort contracts verified from local model cache:
 
@@ -18,5 +19,6 @@ Desktop effort contracts verified from local model cache:
 | `gpt-5.6-sol` | `low`, `medium`, `high`, `xhigh`, `max`, `ultra` |
 | `gpt-5.6-terra` | `low`, `medium`, `high`, `xhigh`, `max`, `ultra` |
 | `gpt-5.6-luna` | `low`, `medium`, `high`, `xhigh`, `max` |
+| `muse-spark-1.2` | `minimal`, `low`, `medium`, `high`, `xhigh` |
 
 Do not treat strings extracted from app binaries as supported aliases. Add aliases only after Desktop picker and routed request verification.
