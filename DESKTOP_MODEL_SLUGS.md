@@ -1,28 +1,58 @@
-# ChatGPT / Codex Desktop Auranion Routes
+# Desktop Model Slugs — Picker Acceptance
 
-Verified native aliases for Auranion configuration:
+## Claude Desktop — accepted `desktop_alias` values
 
-| App alias | Auranion target |
-| --- | --- |
-| `gpt-5.6-sol` | `cx/gpt-5.6-sol` |
-| `gpt-5.6-terra` | `cx/gpt-5.6-terra` |
-| `gpt-5.6-luna` | `cx/gpt-5.6-luna` |
-| `gpt-5.5` | `alibaba/qwen3.8-max` |
-| `gpt-5.4` | `ag/gemini-3.6-flash-tiered` |
-| `gpt-5.4-mini` | `cmc/deepseek/deepseek-v4-flash` |
-| `muse-spark-1.2` | `cmc/meta/muse-spark-1.2-contributor` |
-| `grok-4.6` | `gcli/grok-4.6` |
-| `deepseek-v4-pro` | `cmc/deepseek/deepseek-v4-pro` |
+Claude Desktop routes by Anthropic alias. Any `claude-*` slug is accepted; only the five below render an **Effort** control in the Model Picker.
 
-Desktop effort contracts verified from local model cache:
+| Slug (`desktop_alias`) | Route → upstream | Effort control |
+| --- | --- | --- |
+| `claude-opus-4-8` | `cx/gpt-5.6-sol` | Yes — user picks effort |
+| `claude-opus-4-7` | `gcli/grok-4.6` | Yes (ultra→xhigh) |
+| `claude-opus-4-6` | `cmc/meta/muse-spark-1.2-contributor` | Yes (ultra→xhigh) |
+| `claude-opus-4-5-20251101` | `cmc/deepseek/deepseek-v4-pro` | Yes |
+| `claude-sonnet-4-6` | *(spare — not assigned)* | Yes |
+| `claude-sonnet-4-5-20250920` | `cx/gpt-5.6-terra` | No — forced `max` |
+| `claude-sonnet-4-5` | `cx/gpt-5.6-luna` | No — forced `max` |
+| `claude-haiku-4-5-20251001` | `cmc/deepseek/deepseek-v4-flash` | No — forced `max` |
+| `claude-haiku-4-6` | `ag/gemini-3.6-flash-tiered` | No — forced `high` |
+| `claude-haiku-4-5` | `alibaba/qwen3.8-max` | No — forced `none` |
 
-| App alias | Reasoning levels |
-| --- | --- |
-| `gpt-5.6-sol` | `low`, `medium`, `high`, `xhigh`, `max`, `ultra` |
-| `gpt-5.6-terra` | `low`, `medium`, `high`, `xhigh`, `max`, `ultra` |
-| `gpt-5.6-luna` | `low`, `medium`, `high`, `xhigh`, `max` |
-| `muse-spark-1.2` | `minimal`, `low`, `medium`, `high`, `xhigh`, `ultra` (ultra→xhigh) |
-| `grok-4.6` | `low`, `medium`, `high`, `xhigh`, `ultra` (ultra→xhigh) |
-| `deepseek-v4-pro` | `low`, `high`, `max` |
+Source: `src/catalog.rs` `MODELS[].desktop_alias`. Effort-capable set is `{ claude-opus-4-8, claude-opus-4-7, claude-opus-4-6, claude-opus-4-5-20251101, claude-sonnet-4-6 }` — only these render the picker. All other routes carry `forced_effort` in `src/catalog.rs`.
 
-Do not treat strings extracted from app binaries as supported aliases. Add aliases only after Desktop picker and routed request verification.
+## ChatGPT / Codex Desktop — accepted `codex_desktop_alias` values
+
+ChatGPT Desktop's Model Picker only renders **native `gpt-*` slugs** it knows about. Custom slugs (`grok-4.6`, `muse-spark-1.2`, `deepseek-v4-pro`) are valid API aliases but are **filtered out of the picker** and never appear in the dropdown, so they are aliased behind `gpt-5.3*` IDs here.
+
+### Official native slugs the picker will render (from `~/.codex/models_cache.json`)
+
+| Native slug | Visibility | Reasoning |
+| --- | --- | --- |
+| `gpt-5.6-sol` | `list` | low / medium / high / xhigh / max / ultra |
+| `gpt-5.6-terra` | `list` | low / medium / high / xhigh / max / ultra |
+| `gpt-5.6-luna` | `list` | low / medium / high / xhigh / max |
+| `gpt-5.5` | `list` | *(none)* |
+| `gpt-5.4` | `list` | low / medium / high |
+| `gpt-5.4-mini` | `list` | low / high / max |
+| `gpt-5.6-sol-wm` / `codex-auto-review` | `hide` | not used |
+
+Any other `gpt-*` slug may be rejected by desktop builds that validate against this list — added `gpt-5.3*` aliases below are **routing-only** and must be verified after an app update re-fetches `models_cache.json`. If the picker stops showing them, move those providers back to Codex CLI / ChatGPT API usage.
+
+### Routing table actually written by `auranion config` (`codex_desktop_alias` → upstream)
+
+| App alias shown in picker | Routes to | Effort exposed to picker |
+| --- | --- | --- |
+| `gpt-5.6-sol` | `cx/gpt-5.6-sol` | low / medium / high / xhigh / max / ultra |
+| `gpt-5.6-terra` | `cx/gpt-5.6-terra` | low / medium / high / xhigh / max / ultra |
+| `gpt-5.6-luna` | `cx/gpt-5.6-luna` | low / medium / high / xhigh / max |
+| `gpt-5.4-mini` | `cmc/deepseek/deepseek-v4-flash` | low / high / max |
+| `gpt-5.4` | `ag/gemini-3.6-flash-tiered` | low / medium / high |
+| `gpt-5.5` | `alibaba/qwen3.8-max` | *(none)* |
+| `gpt-5.3` *(aliased — see note above)* | `gcli/grok-4.6` | low / medium / high / xhigh / ultra (ultra→xhigh) |
+| `gpt-5.3-mini` *(aliased)* | `cmc/meta/muse-spark-1.2-contributor` | minimal / low / medium / high / xhigh / ultra (ultra→xhigh) |
+| `gpt-5.3-turbo` *(aliased)* | `cmc/deepseek/deepseek-v4-pro` | low / high / max |
+
+The three `gpt-5.3*` rows exist only so non-GPT providers appear in the ChatGPT Desktop dropdown; they have no upstream `gpt-5.3` model. See `COMBOS.md` for the matching 9router combos.
+
+### Verification
+
+Before adding a new slug, confirm it is in `models_cache.json` or has been tested end-to-end: `auranion config --apply` → restart ChatGPT Desktop → select alias → send a message → confirm the gateway logs the expected `model=` value. Do not add aliases by string-harvesting binaries.

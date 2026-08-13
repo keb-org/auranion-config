@@ -95,7 +95,7 @@ pub const MODELS: &[Model] = &[
         label: "Grok 4.6",
         desktop_alias: "claude-opus-4-7",
         desktop_label: "Grok 4.6",
-        codex_desktop_alias: "grok-4.6",
+        codex_desktop_alias: "gpt-5.3",
         codex_desktop_reasoning_efforts: &["low", "medium", "high", "xhigh", "ultra"],
         score: None,
         context: Some(500_000),
@@ -113,7 +113,7 @@ pub const MODELS: &[Model] = &[
         label: "Muse Spark 1.2",
         desktop_alias: "claude-opus-4-6",
         desktop_label: "Muse Spark 1.2",
-        codex_desktop_alias: "muse-spark-1.2",
+        codex_desktop_alias: "gpt-5.3-mini",
         codex_desktop_reasoning_efforts: &["minimal", "low", "medium", "high", "xhigh", "ultra"],
         score: None,
         context: Some(1_048_576),
@@ -149,7 +149,7 @@ pub const MODELS: &[Model] = &[
         label: "DeepSeek V4 Pro",
         desktop_alias: "claude-opus-4-5-20251101",
         desktop_label: "DeepSeek V4 Pro",
-        codex_desktop_alias: "deepseek-v4-pro",
+        codex_desktop_alias: "gpt-5.3-turbo",
         codex_desktop_reasoning_efforts: &["low", "high", "max"],
         score: None,
         context: Some(1_048_576),
@@ -440,9 +440,9 @@ mod tests {
             ("gpt-5.5", "alibaba/qwen3.8-max"),
             ("gpt-5.4", "ag/gemini-3.6-flash-tiered"),
             ("gpt-5.4-mini", "cmc/deepseek/deepseek-v4-flash"),
-            ("muse-spark-1.2", "cmc/meta/muse-spark-1.2-contributor"),
-            ("grok-4.6", "gcli/grok-4.6"),
-            ("deepseek-v4-pro", "cmc/deepseek/deepseek-v4-pro"),
+            ("gpt-5.3-mini", "cmc/meta/muse-spark-1.2-contributor"),
+            ("gpt-5.3", "gcli/grok-4.6"),
+            ("gpt-5.3-turbo", "cmc/deepseek/deepseek-v4-pro"),
         ];
         let aliases: HashSet<_> = MODELS
             .iter()
@@ -474,11 +474,11 @@ mod tests {
             ("gpt-5.4", &["low", "medium", "high"]),
             ("gpt-5.4-mini", &["low", "high", "max"]),
             (
-                "muse-spark-1.2",
+                "gpt-5.3-mini",
                 &["minimal", "low", "medium", "high", "xhigh", "ultra"],
             ),
-            ("grok-4.6", &["low", "medium", "high", "xhigh", "ultra"]),
-            ("deepseek-v4-pro", &["low", "high", "max"]),
+            ("gpt-5.3", &["low", "medium", "high", "xhigh", "ultra"]),
+            ("gpt-5.3-turbo", &["low", "high", "max"]),
         ];
 
         for (alias, efforts) in expected {
