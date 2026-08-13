@@ -406,12 +406,31 @@ fn get_integration_details<'a>(
 
     match integration {
         Integration::ClaudeDesktop => {
-            lines.push(Line::from(
-                "  • %LOCALAPPDATA%\\Claude-3p\\configLibrary\\_meta.json",
-            ));
-            lines.push(Line::from(
-                "  • %LOCALAPPDATA%\\Claude-3p\\configLibrary\\<id>.json",
-            ));
+            if cfg!(windows) {
+                lines.push(Line::from(
+                    "  • %LOCALAPPDATA%\\Claude-3p\\configLibrary\\_meta.json",
+                ));
+                lines.push(Line::from(
+                    "  • %LOCALAPPDATA%\\Claude-3p\\configLibrary\\<id>.json",
+                ));
+            } else if cfg!(target_os = "macos") {
+                lines.push(Line::from(
+                    "  • ~/Library/Application Support/Claude-3p/configLibrary/_meta.json",
+                ));
+                lines.push(Line::from(
+                    "  • ~/Library/Application Support/Claude-3p/configLibrary/<id>.json",
+                ));
+                lines.push(Line::from(
+                    "    (app data: ~/Library/Application Support/Claude)",
+                ));
+            } else {
+                lines.push(Line::from(
+                    "  • ~/.config/Claude-3p/configLibrary/_meta.json",
+                ));
+                lines.push(Line::from(
+                    "  • ~/.config/Claude-3p/configLibrary/<id>.json",
+                ));
+            }
         }
         Integration::ClaudeCode => {
             lines.push(Line::from("  • ~/.claude/settings.json (env)"));

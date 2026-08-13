@@ -36,11 +36,35 @@ const DEPLOYMENT_MODE_KEY: &str = "deploymentMode";
 const DEPLOYMENT_MODE_3P: &str = "3p";
 
 pub(super) fn detect(dirs: &BaseDirs) -> bool {
-    config_root(dirs).is_dir()
+    if candidate_roots(dirs).iter().any(|path| path.is_dir()) {
+        return true;
+    }
+    if cfg!(target_os = "macos") {
+        return std::path::Path::new("/Applications/Claude.app").exists()
+            || dirs
+                .home_dir()
+                .join("Applications")
+                .join("Claude.app")
+                .exists();
+    }
+    false
 }
 
-pub(super) fn diagnostics(_dirs: &BaseDirs) -> Vec<String> {
-    Vec::new()
+pub(super) fn diagnostics(dirs: &BaseDirs) -> Vec<String> {
+    if candidate_roots(dirs).iter().any(|path| path.is_dir()) {
+        return Vec::new();
+    }
+    if cfg!(target_os = "macos")
+        && (std::path::Path::new("/Applications/Claude.app").exists()
+            || dirs
+                .home_dir()
+                .join("Applications")
+                .join("Claude.app")
+                .exists())
+    {
+        return vec!["config directory not yet created (launch Claude once)".into()];
+    }
+    vec!["config directory missing".into()]
 }
 
 pub(super) fn select(
@@ -49,7 +73,18 @@ pub(super) fn select(
     state: &mut State,
     api_key: &str,
 ) -> Result<()> {
-    select_at_root(&config_root(dirs), data_dir, state, api_key)
+    let root = resolve_config_root(dirs);
+    select_at_root(&root, data_dir, state, api_key)
+}
+
+fn resolve_config_root(_dirs: &BaseDirs) -> PathBuf {
+    // Always write to the canonical 3p location (`Claude-3p`). The main
+    // Electron userData dir on macOS is `~/Library/Application Support/Claude`
+    // (without -3p), but the 3p gateway profiles are read from
+    // `Claude-3p/configLibrary/` via V7()/G7() in the app bundle (see
+    // app.asar: V7 appends "-3p" to getPath("userData")). Creating the
+    // alternate `Claude/configLibrary` would never be read.
+    config_root(_dirs)
 }
 
 fn select_at_root(root: &Path, data_dir: &Path, state: &mut State, api_key: &str) -> Result<()> {
@@ -176,6 +211,26 @@ fn config_root(dirs: &BaseDirs) -> PathBuf {
     } else {
         dirs.home_dir().join(".config").join("Claude-3p")
     }
+}
+
+fn alternate_root(dirs: &BaseDirs) -> PathBuf {
+    if cfg!(windows) {
+        std::env::var_os("LOCALAPPDATA")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| dirs.data_local_dir().to_path_buf())
+            .join("Claude")
+    } else if cfg!(target_os = "macos") {
+        dirs.home_dir()
+            .join("Library")
+            .join("Application Support")
+            .join("Claude")
+    } else {
+        dirs.home_dir().join(".config").join("Claude")
+    }
+}
+
+fn candidate_roots(dirs: &BaseDirs) -> Vec<PathBuf> {
+    vec![config_root(dirs), alternate_root(dirs)]
 }
 
 fn merge(path: &Path, api_key: &str) -> Result<()> {
@@ -565,5 +620,152 @@ mod tests {
 
         fs::remove_dir_all(&root).unwrap();
         fs::remove_dir_all(&data_dir).unwrap();
+    }
+
+    #[test]
+    fn config_root_is_canonical_3p_and_alternate_is_claude_without_suffix() {
+        // Verified against directories crate: on macOS both config_dir and
+        // data_local_dir are ~/Library/Application Support, so:
+        //   config_root  = .../Claude-3p
+        //   alternate    = .../Claude  (Electron userData without -3p)
+        // V7() in the app bundle is getPath("userData") + "-3p" -> Claude-3p.
+        // Gateway reads Claude-3p/configLibrary; Claude data lives in Claude.
+        let dirs = directories::BaseDirs::new().expect("BaseDirs");
+        let root = config_root(&dirs);
+        let alt = alternate_root(&dirs);
+        if cfg!(windows) {
+            assert!(root.ends_with("Claude-3p"));
+            assert!(alt.ends_with("Claude"));
+            assert_ne!(root, alt);
+        } else if cfg!(target_os = "macos") {
+            assert!(root.ends_with("Claude-3p"));
+            assert!(alt.ends_with("Claude"));
+            assert!(
+                alt.to_string_lossy()
+                    .ends_with("Application Support/Claude")
+            );
+            assert!(
+                root.to_string_lossy()
+                    .ends_with("Application Support/Claude-3p")
+            );
+            assert_ne!(root, alt);
+            assert_eq!(candidate_roots(&dirs).len(), 2);
+            assert_eq!(candidate_roots(&dirs)[0], root);
+            assert_eq!(candidate_roots(&dirs)[1], alt);
+        } else {
+            assert!(root.ends_with("Claude-3p"));
+            assert!(alt.ends_with("Claude"));
+        }
+    }
+
+    #[test]
+    fn resolve_config_root_always_returns_canonical_3p() {
+        // Even when both Claude and Claude-3p exist, we must write to
+        // Claude-3p because the gateway (V7/G7 in app.asar) only reads there.
+        let dirs = directories::BaseDirs::new().expect("BaseDirs");
+        assert!(resolve_config_root(&dirs).ends_with("Claude-3p"));
+        // Verified on this Mac: /Applications/Claude.app exists, Claude dir
+        // exists, Claude-3p does not — resolve still returns Claude-3p.
+        assert_eq!(resolve_config_root(&dirs), config_root(&dirs));
+    }
+
+    #[test]
+    fn candidate_roots_covers_both_electron_locations() {
+        let dirs = directories::BaseDirs::new().expect("BaseDirs");
+        let roots = candidate_roots(&dirs);
+        assert_eq!(roots.len(), 2);
+        // One is the gateway-readable Claude-3p, the other is Electron userData.
+        assert!(roots.iter().any(|p| p.ends_with("Claude-3p")));
+        assert!(
+            roots
+                .iter()
+                .any(|p| p.file_name().and_then(|n| n.to_str()) == Some("Claude"))
+        );
+    }
+
+    #[test]
+    fn select_at_root_creates_3p_tree_from_scratch() {
+        // Simulates a fresh macOS install where Claude.app exists but no
+        // Claude-3p directory has been created yet (the reported bug).
+        // select_at_root must create configLibrary + _meta + profile.
+        let root = temp_root("macos-fresh-3p");
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).unwrap();
+        // No configLibrary yet — fresh.
+        let data_dir = temp_root("macos-fresh-3p-data");
+        let _ = fs::remove_dir_all(&data_dir);
+        fs::create_dir_all(&data_dir).unwrap();
+        let mut state = State::default();
+
+        select_at_root(&root, &data_dir, &mut state, "macos-key").unwrap();
+
+        let profile = library(&root).join(format!("{OWNED_PROFILE_ID}.json"));
+        assert!(profile.exists(), "owned profile not created");
+        let cfg = read_json(&profile).unwrap();
+        assert_eq!(
+            cfg.get("inferenceProvider").and_then(Value::as_str),
+            Some("gateway")
+        );
+        assert_eq!(
+            cfg.get("inferenceGatewayApiKey").and_then(Value::as_str),
+            Some("macos-key")
+        );
+        assert_eq!(
+            cfg.get("inferenceModels")
+                .and_then(Value::as_array)
+                .unwrap()
+                .len(),
+            MODELS.len()
+        );
+        let meta = read_json(&metadata_path(&root)).unwrap();
+        assert_eq!(
+            meta.get("appliedId").and_then(Value::as_str),
+            Some(OWNED_PROFILE_ID)
+        );
+        let consumer = read_json(&consumer_config_path(&root)).unwrap();
+        assert_eq!(
+            consumer.get("deploymentMode").and_then(Value::as_str),
+            Some("3p")
+        );
+
+        deselect(&mut state).unwrap();
+        assert!(!profile.exists());
+        assert!(!metadata_path(&root).exists());
+        assert!(!consumer_config_path(&root).exists());
+
+        fs::remove_dir_all(&root).unwrap();
+        fs::remove_dir_all(&data_dir).unwrap();
+    }
+
+    #[test]
+    fn merge_writes_all_model_desktop_aliases() {
+        let dir = temp_root("merge-aliases");
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("cfg.json");
+        std::fs::write(&path, "{}").unwrap();
+        merge(&path, "k").unwrap();
+        let cfg = read_json(&path).unwrap();
+        let models = cfg
+            .get("inferenceModels")
+            .and_then(Value::as_array)
+            .unwrap();
+        let names: Vec<_> = models
+            .iter()
+            .filter_map(|m| m.get("name").and_then(Value::as_str))
+            .collect();
+        for expected in [
+            "claude-opus-4-8",
+            "claude-opus-4-7",
+            "claude-opus-4-6",
+            "claude-haiku-4-5-20251001",
+            "claude-haiku-4-6",
+        ] {
+            assert!(
+                names.contains(&expected),
+                "missing alias {expected} in {names:?}"
+            );
+        }
+        fs::remove_dir_all(&dir).unwrap();
     }
 }

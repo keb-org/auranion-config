@@ -263,14 +263,14 @@ mod tests {
     #[cfg(unix)]
     #[test]
     fn write_bytes_preserves_existing_file_mode() {
-        use std::os::unix::fs::{PermissionsExt, set_permissions};
+        use std::os::unix::fs::PermissionsExt;
 
         let dir = test_dir("write-mode");
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("config.json");
         fs::write(&path, b"first").unwrap();
-        set_permissions(&path, fs::Permissions::from_mode(0o600)).unwrap();
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o600)).unwrap();
 
         write_bytes(&path, b"second").unwrap();
 

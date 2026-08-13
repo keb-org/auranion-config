@@ -245,4 +245,79 @@ mod tests {
         assert!(merge_config(&path).is_err());
         std::fs::remove_file(path).unwrap();
     }
+
+    #[test]
+    fn config_path_prefers_standard_but_falls_back_to_home_on_macos() {
+        // Verified on this Mac: standard = ~/Library/Application Support/opencode/opencode.jsonc
+        // (does not exist), home = ~/.config/opencode/opencode.jsonc (exists).
+        // directories crate on macOS: config_dir == ~/Library/Application Support.
+        let dirs = directories::BaseDirs::new().expect("BaseDirs");
+        let standard = dirs.config_dir().join("opencode").join("opencode.jsonc");
+        let home = dirs
+            .home_dir()
+            .join(".config")
+            .join("opencode")
+            .join("opencode.jsonc");
+        if cfg!(target_os = "macos") {
+            assert!(standard.to_string_lossy().contains("Application Support"));
+            assert!(home.to_string_lossy().contains(".config/opencode"));
+        }
+        // The function picks whichever exists, with standard preferred.
+        // At minimum it returns one of the two candidates.
+        let chosen = config_path(&dirs);
+        assert!(
+            chosen == standard || chosen == home,
+            "chosen={chosen:?} standard={standard:?} home={home:?}"
+        );
+        // On this Mac the home path holds the real file.
+        if home.exists() && !standard.exists() {
+            assert_eq!(chosen, home);
+        }
+    }
+
+    #[test]
+    fn auth_path_prefers_standard_but_falls_back_to_home_on_macos() {
+        let dirs = directories::BaseDirs::new().expect("BaseDirs");
+        let standard = dirs.data_local_dir().join("opencode").join("auth.json");
+        let home = dirs
+            .home_dir()
+            .join(".local")
+            .join("share")
+            .join("opencode")
+            .join("auth.json");
+        if cfg!(target_os = "macos") {
+            assert!(standard.to_string_lossy().contains("Application Support"));
+            assert!(home.to_string_lossy().contains(".local/share/opencode"));
+        }
+        let chosen = auth_path(&dirs);
+        assert!(chosen == standard || chosen == home);
+        if home.exists() && !standard.exists() {
+            assert_eq!(chosen, home);
+        }
+    }
+
+    #[test]
+    fn provider_models_match_catalog_with_variants() {
+        let dir =
+            std::env::temp_dir().join(format!("auranion-opencode-catalog-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("opencode.jsonc");
+        std::fs::write(&path, "{}").unwrap();
+        merge_config(&path).unwrap();
+        let root = read_json(&path).unwrap();
+        let models = root["provider"]["auranion"]["models"].as_object().unwrap();
+        assert_eq!(models.len(), MODELS.len());
+        // Qwen has no variants (no reasoning_efforts)
+        let qwen = &models["alibaba/qwen3.8-max"];
+        assert!(
+            qwen.get("variants").is_none(),
+            "qwen should have no variants"
+        );
+        // DeepSeek has low/high/max only
+        let ds = &models["cmc/deepseek/deepseek-v4-flash"];
+        let variants = ds.get("variants").and_then(|v| v.as_object()).unwrap();
+        assert!(variants.contains_key("low") && variants.contains_key("max"));
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
 }
