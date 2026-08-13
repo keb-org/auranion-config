@@ -147,7 +147,7 @@ pub(super) fn status() -> Result<()> {
         let details = if report.is_empty() {
             String::new()
         } else {
-            format!(" — {}", report.join(", "))
+            format!(" â€” {}", report.join(", "))
         };
         println!(
             "  {}: {}{}",
@@ -156,9 +156,9 @@ pub(super) fn status() -> Result<()> {
             details
         );
         if active && integration == Integration::CodexDesktop {
-            println!("    App alias → Auranion target");
+            println!("    App alias â†’ Auranion target");
             for (alias, target) in codex_desktop_routes() {
-                println!("      {alias} → {target}");
+                println!("      {alias} â†’ {target}");
             }
         }
     }
@@ -239,10 +239,12 @@ mod tests {
                 ("gpt-5.6-sol", "cx/gpt-5.6-sol"),
                 ("gpt-5.6-terra", "cx/gpt-5.6-terra"),
                 ("gpt-5.6-luna", "cx/gpt-5.6-luna"),
-                ("gpt-5.5", "alibaba/qwen3.8-max"),
-                ("gpt-5.4", "ag/gemini-3.6-flash-tiered"),
-                ("gpt-5.4-mini", "cmc/deepseek/deepseek-v4-flash"),
+                ("grok-4.6", "gcli/grok-4.6"),
                 ("muse-spark-1.2", "cmc/meta/muse-spark-1.2-contributor"),
+                ("gpt-5.4-mini", "cmc/deepseek/deepseek-v4-flash"),
+                ("deepseek-v4-pro", "cmc/deepseek/deepseek-v4-pro"),
+                ("gpt-5.4", "ag/gemini-3.6-flash-tiered"),
+                ("gpt-5.5", "alibaba/qwen3.8-max"),
             ]
         );
     }

@@ -11,6 +11,8 @@ Verified native aliases for Auranion configuration:
 | `gpt-5.4` | `ag/gemini-3.6-flash-tiered` |
 | `gpt-5.4-mini` | `cmc/deepseek/deepseek-v4-flash` |
 | `muse-spark-1.2` | `cmc/meta/muse-spark-1.2-contributor` |
+| `grok-4.6` | `gcli/grok-4.6` |
+| `deepseek-v4-pro` | `cmc/deepseek/deepseek-v4-pro` |
 
 Desktop effort contracts verified from local model cache:
 
@@ -19,6 +21,8 @@ Desktop effort contracts verified from local model cache:
 | `gpt-5.6-sol` | `low`, `medium`, `high`, `xhigh`, `max`, `ultra` |
 | `gpt-5.6-terra` | `low`, `medium`, `high`, `xhigh`, `max`, `ultra` |
 | `gpt-5.6-luna` | `low`, `medium`, `high`, `xhigh`, `max` |
-| `muse-spark-1.2` | `minimal`, `low`, `medium`, `high`, `xhigh` |
+| `muse-spark-1.2` | `minimal`, `low`, `medium`, `high`, `xhigh`, `ultra` (ultra→xhigh) |
+| `grok-4.6` | `low`, `medium`, `high`, `xhigh`, `ultra` (ultra→xhigh) |
+| `deepseek-v4-pro` | `low`, `high`, `max` |
 
 Do not treat strings extracted from app binaries as supported aliases. Add aliases only after Desktop picker and routed request verification.

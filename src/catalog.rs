@@ -57,7 +57,7 @@ pub const MODELS: &[Model] = &[
     Model {
         upstream: "cx/gpt-5.6-terra",
         label: "GPT 5.6 Terra",
-        desktop_alias: "claude-opus-4-7",
+        desktop_alias: "claude-sonnet-4-5-20250920",
         desktop_label: "GPT 5.6 Terra",
         codex_desktop_alias: "gpt-5.6-terra",
         codex_desktop_reasoning_efforts: &["low", "medium", "high", "xhigh", "max", "ultra"],
@@ -70,12 +70,12 @@ pub const MODELS: &[Model] = &[
         audio: false,
         video: false,
         native_claude: false,
-        forced_effort: None,
+        forced_effort: Some("max"),
     },
     Model {
         upstream: "cx/gpt-5.6-luna",
         label: "GPT 5.6 Luna",
-        desktop_alias: "claude-opus-4-6",
+        desktop_alias: "claude-sonnet-4-5",
         desktop_label: "GPT 5.6 Luna",
         codex_desktop_alias: "gpt-5.6-luna",
         codex_desktop_reasoning_efforts: &["low", "medium", "high", "xhigh", "max"],
@@ -88,38 +88,38 @@ pub const MODELS: &[Model] = &[
         audio: false,
         video: false,
         native_claude: false,
-        forced_effort: None,
+        forced_effort: Some("max"),
     },
     Model {
-        upstream: "alibaba/qwen3.8-max",
-        label: "Qwen 3.8 Max",
-        desktop_alias: "claude-opus-4-5-20251101",
-        desktop_label: "Qwen 3.8 Max",
-        codex_desktop_alias: "gpt-5.5",
-        codex_desktop_reasoning_efforts: &[],
-        score: Some(57),
-        context: Some(1_000_000),
-        output: Some(65_536),
+        upstream: "gcli/grok-4.6",
+        label: "Grok 4.6",
+        desktop_alias: "claude-opus-4-7",
+        desktop_label: "Grok 4.6",
+        codex_desktop_alias: "grok-4.6",
+        codex_desktop_reasoning_efforts: &["low", "medium", "high", "xhigh", "ultra"],
+        score: None,
+        context: Some(500_000),
+        output: Some(128_000),
         reasoning: true,
-        reasoning_efforts: &[],
-        vision: false,
+        reasoning_efforts: &["low", "medium", "high", "xhigh"],
+        vision: true,
         audio: false,
         video: false,
         native_claude: false,
         forced_effort: None,
     },
     Model {
-        upstream: "ag/gemini-3.6-flash-tiered",
-        label: "Gemini 3.6 Flash",
-        desktop_alias: "claude-sonnet-4-6",
-        desktop_label: "Gemini 3.6 Flash",
-        codex_desktop_alias: "gpt-5.4",
-        codex_desktop_reasoning_efforts: &["low", "medium", "high"],
-        score: Some(50),
+        upstream: "cmc/meta/muse-spark-1.2-contributor",
+        label: "Muse Spark 1.2",
+        desktop_alias: "claude-opus-4-6",
+        desktop_label: "Muse Spark 1.2",
+        codex_desktop_alias: "muse-spark-1.2",
+        codex_desktop_reasoning_efforts: &["minimal", "low", "medium", "high", "xhigh", "ultra"],
+        score: None,
         context: Some(1_048_576),
-        output: Some(65_536),
+        output: Some(128_000),
         reasoning: true,
-        reasoning_efforts: &["low", "medium", "high"],
+        reasoning_efforts: &["minimal", "low", "medium", "high", "xhigh"],
         vision: true,
         audio: true,
         video: true,
@@ -145,22 +145,58 @@ pub const MODELS: &[Model] = &[
         forced_effort: Some("max"),
     },
     Model {
-        upstream: "cmc/meta/muse-spark-1.2-contributor",
-        label: "Muse Spark 1.2",
-        desktop_alias: "claude-sonnet-4-5-20250920",
-        desktop_label: "Muse Spark 1.2",
-        codex_desktop_alias: "muse-spark-1.2",
-        codex_desktop_reasoning_efforts: &["minimal", "low", "medium", "high", "xhigh"],
+        upstream: "cmc/deepseek/deepseek-v4-pro",
+        label: "DeepSeek V4 Pro",
+        desktop_alias: "claude-opus-4-5-20251101",
+        desktop_label: "DeepSeek V4 Pro",
+        codex_desktop_alias: "deepseek-v4-pro",
+        codex_desktop_reasoning_efforts: &["low", "high", "max"],
         score: None,
         context: Some(1_048_576),
-        output: Some(128_000),
+        output: Some(393_216),
         reasoning: true,
-        reasoning_efforts: &["minimal", "low", "medium", "high", "xhigh"],
+        reasoning_efforts: &["low", "high", "max"],
+        vision: false,
+        audio: false,
+        video: false,
+        native_claude: false,
+        forced_effort: None,
+    },
+    Model {
+        upstream: "ag/gemini-3.6-flash-tiered",
+        label: "Gemini 3.6 Flash",
+        desktop_alias: "claude-haiku-4-6",
+        desktop_label: "Gemini 3.6 Flash",
+        codex_desktop_alias: "gpt-5.4",
+        codex_desktop_reasoning_efforts: &["low", "medium", "high"],
+        score: Some(50),
+        context: Some(1_048_576),
+        output: Some(65_536),
+        reasoning: true,
+        reasoning_efforts: &["low", "medium", "high"],
         vision: true,
         audio: true,
         video: true,
         native_claude: false,
         forced_effort: Some("high"),
+    },
+    Model {
+        upstream: "alibaba/qwen3.8-max",
+        label: "Qwen 3.8 Max",
+        desktop_alias: "claude-haiku-4-5",
+        desktop_label: "Qwen 3.8 Max",
+        codex_desktop_alias: "gpt-5.5",
+        codex_desktop_reasoning_efforts: &[],
+        score: Some(57),
+        context: Some(1_000_000),
+        output: Some(65_536),
+        reasoning: true,
+        reasoning_efforts: &[],
+        vision: false,
+        audio: false,
+        video: false,
+        native_claude: false,
+        forced_effort: Some("none"),
     },
 ];
 
@@ -198,7 +234,9 @@ mod tests {
             "cx/gpt-5.6-terra",
             "cx/gpt-5.6-luna",
             "cmc/deepseek/deepseek-v4-flash",
+            "cmc/deepseek/deepseek-v4-pro",
             "cmc/meta/muse-spark-1.2-contributor",
+            "gcli/grok-4.6",
         ];
 
         assert_eq!(upstream.len(), expected.len());
@@ -216,10 +254,12 @@ mod tests {
                 "GPT 5.6 Sol",
                 "GPT 5.6 Terra",
                 "GPT 5.6 Luna",
-                "Qwen 3.8 Max",
-                "Gemini 3.6 Flash",
-                "DeepSeek V4 Flash",
+                "Grok 4.6",
                 "Muse Spark 1.2",
+                "DeepSeek V4 Flash",
+                "DeepSeek V4 Pro",
+                "Gemini 3.6 Flash",
+                "Qwen 3.8 Max",
             ]
         );
     }
@@ -238,10 +278,10 @@ mod tests {
 
     #[test]
     fn desktop_routes_preserve_non_anthropic_upstreams() {
-        let qwen = by_desktop_alias("claude-opus-4-5-20251101").unwrap();
+        let qwen = by_desktop_alias("claude-haiku-4-5").unwrap();
         assert_eq!(qwen.upstream, "alibaba/qwen3.8-max");
 
-        let gemini = by_desktop_alias("claude-sonnet-4-6").unwrap();
+        let gemini = by_desktop_alias("claude-haiku-4-6").unwrap();
         assert_eq!(gemini.upstream, "ag/gemini-3.6-flash-tiered");
 
         let sol = by_desktop_alias("claude-opus-4-8").unwrap();
@@ -250,8 +290,14 @@ mod tests {
         let deepseek = by_desktop_alias("claude-haiku-4-5-20251001").unwrap();
         assert_eq!(deepseek.upstream, "cmc/deepseek/deepseek-v4-flash");
 
-        let muse = by_desktop_alias("claude-sonnet-4-5-20250920").unwrap();
+        let muse = by_desktop_alias("claude-opus-4-6").unwrap();
         assert_eq!(muse.upstream, "cmc/meta/muse-spark-1.2-contributor");
+
+        let grok = by_desktop_alias("claude-opus-4-7").unwrap();
+        assert_eq!(grok.upstream, "gcli/grok-4.6");
+
+        let pro = by_desktop_alias("claude-opus-4-5-20251101").unwrap();
+        assert_eq!(pro.upstream, "cmc/deepseek/deepseek-v4-pro");
     }
 
     /// Claude Desktop derives the Effort control from the route model ID.
@@ -268,7 +314,12 @@ mod tests {
             "claude-sonnet-4-6",
         ];
 
-        for upstream in ["cx/gpt-5.6-sol", "cx/gpt-5.6-terra", "cx/gpt-5.6-luna"] {
+        for upstream in [
+            "cx/gpt-5.6-sol",
+            "gcli/grok-4.6",
+            "cmc/meta/muse-spark-1.2-contributor",
+            "cmc/deepseek/deepseek-v4-pro",
+        ] {
             let model = MODELS
                 .iter()
                 .find(|model| model.upstream == upstream)
@@ -286,18 +337,17 @@ mod tests {
     fn claude_desktop_picker_routes_keep_verified_effort_mapping() {
         let expected = [
             ("cx/gpt-5.6-sol", "claude-opus-4-8"),
-            ("cx/gpt-5.6-terra", "claude-opus-4-7"),
-            ("cx/gpt-5.6-luna", "claude-opus-4-6"),
-            ("alibaba/qwen3.8-max", "claude-opus-4-5-20251101"),
-            ("ag/gemini-3.6-flash-tiered", "claude-sonnet-4-6"),
+            ("cx/gpt-5.6-terra", "claude-sonnet-4-5-20250920"),
+            ("cx/gpt-5.6-luna", "claude-sonnet-4-5"),
+            ("alibaba/qwen3.8-max", "claude-haiku-4-5"),
+            ("ag/gemini-3.6-flash-tiered", "claude-haiku-4-6"),
             (
                 "cmc/deepseek/deepseek-v4-flash",
                 "claude-haiku-4-5-20251001",
             ),
-            (
-                "cmc/meta/muse-spark-1.2-contributor",
-                "claude-sonnet-4-5-20250920",
-            ),
+            ("cmc/meta/muse-spark-1.2-contributor", "claude-opus-4-6"),
+            ("gcli/grok-4.6", "claude-opus-4-7"),
+            ("cmc/deepseek/deepseek-v4-pro", "claude-opus-4-5-20251101"),
         ];
 
         for (upstream, desktop_alias) in expected {
@@ -360,10 +410,12 @@ mod tests {
             ("alibaba/qwen3.8-max", &[]),
             ("ag/gemini-3.6-flash-tiered", &["low", "medium", "high"]),
             ("cmc/deepseek/deepseek-v4-flash", &["low", "high", "max"]),
+            ("cmc/deepseek/deepseek-v4-pro", &["low", "high", "max"]),
             (
                 "cmc/meta/muse-spark-1.2-contributor",
                 &["minimal", "low", "medium", "high", "xhigh"],
             ),
+            ("gcli/grok-4.6", &["low", "medium", "high", "xhigh"]),
         ];
 
         for (upstream, efforts) in expected {
@@ -389,6 +441,8 @@ mod tests {
             ("gpt-5.4", "ag/gemini-3.6-flash-tiered"),
             ("gpt-5.4-mini", "cmc/deepseek/deepseek-v4-flash"),
             ("muse-spark-1.2", "cmc/meta/muse-spark-1.2-contributor"),
+            ("grok-4.6", "gcli/grok-4.6"),
+            ("deepseek-v4-pro", "cmc/deepseek/deepseek-v4-pro"),
         ];
         let aliases: HashSet<_> = MODELS
             .iter()
@@ -421,8 +475,10 @@ mod tests {
             ("gpt-5.4-mini", &["low", "high", "max"]),
             (
                 "muse-spark-1.2",
-                &["minimal", "low", "medium", "high", "xhigh"],
+                &["minimal", "low", "medium", "high", "xhigh", "ultra"],
             ),
+            ("grok-4.6", &["low", "medium", "high", "xhigh", "ultra"]),
+            ("deepseek-v4-pro", &["low", "high", "max"]),
         ];
 
         for (alias, efforts) in expected {
