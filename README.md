@@ -31,3 +31,10 @@ auranion status
 # Self-update to latest release
 auranion update
 ```
+
+## Administrator Reference
+
+- [Combos](COMBOS.md) — 18-combo configuration matrix for 9router admins.
+- [Desktop Model Slugs](DESKTOP_MODEL_SLUGS.md) — ChatGPT / Codex Desktop alias mapping.
+- [Session Context](CONTEXT.md) — Canonical catalog and architectural records.
+
