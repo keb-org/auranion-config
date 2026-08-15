@@ -33,7 +33,7 @@ pub const DEFAULT_MODEL: &str = "cx/gpt-5.6-sol";
 pub const FABLE_MODEL: &str = "cx/gpt-5.6-sol";
 pub const OPUS_MODEL: &str = "cx/gpt-5.6-terra";
 pub const SONNET_MODEL: &str = "cx/gpt-5.6-luna";
-pub const HAIKU_MODEL: &str = "ag/gemini-3.6-flash-tiered";
+pub const HAIKU_MODEL: &str = "ag/gemini-3.7-flash-tiered";
 
 pub const MODELS: &[Model] = &[
     Model {
@@ -163,10 +163,10 @@ pub const MODELS: &[Model] = &[
         forced_effort: None,
     },
     Model {
-        upstream: "ag/gemini-3.6-flash-tiered",
-        label: "Gemini 3.6 Flash",
+        upstream: "ag/gemini-3.7-flash-tiered",
+        label: "Gemini 3.7 Flash",
         desktop_alias: "claude-haiku-4-6",
-        desktop_label: "Gemini 3.6 Flash",
+        desktop_label: "Gemini 3.7 Flash",
         codex_desktop_alias: "gpt-5.4",
         codex_desktop_reasoning_efforts: &["low", "medium", "high"],
         score: Some(50),
@@ -221,7 +221,7 @@ mod tests {
         assert_eq!(FABLE_MODEL, "cx/gpt-5.6-sol");
         assert_eq!(OPUS_MODEL, "cx/gpt-5.6-terra");
         assert_eq!(SONNET_MODEL, "cx/gpt-5.6-luna");
-        assert_eq!(HAIKU_MODEL, "ag/gemini-3.6-flash-tiered");
+        assert_eq!(HAIKU_MODEL, "ag/gemini-3.7-flash-tiered");
     }
 
     #[test]
@@ -229,7 +229,7 @@ mod tests {
         let upstream: HashSet<_> = MODELS.iter().map(|model| model.upstream).collect();
         let expected = [
             "alibaba/qwen3.8-max",
-            "ag/gemini-3.6-flash-tiered",
+            "ag/gemini-3.7-flash-tiered",
             "cx/gpt-5.6-sol",
             "cx/gpt-5.6-terra",
             "cx/gpt-5.6-luna",
@@ -258,7 +258,7 @@ mod tests {
                 "Muse Spark 1.2",
                 "DeepSeek V4 Flash",
                 "DeepSeek V4 Pro",
-                "Gemini 3.6 Flash",
+                "Gemini 3.7 Flash",
                 "Qwen 3.8 Max",
             ]
         );
@@ -282,7 +282,7 @@ mod tests {
         assert_eq!(qwen.upstream, "alibaba/qwen3.8-max");
 
         let gemini = by_desktop_alias("claude-haiku-4-6").unwrap();
-        assert_eq!(gemini.upstream, "ag/gemini-3.6-flash-tiered");
+        assert_eq!(gemini.upstream, "ag/gemini-3.7-flash-tiered");
 
         let sol = by_desktop_alias("claude-opus-4-8").unwrap();
         assert_eq!(sol.upstream, "cx/gpt-5.6-sol");
@@ -340,7 +340,7 @@ mod tests {
             ("cx/gpt-5.6-terra", "claude-sonnet-4-5-20250920"),
             ("cx/gpt-5.6-luna", "claude-sonnet-4-5"),
             ("alibaba/qwen3.8-max", "claude-haiku-4-5"),
-            ("ag/gemini-3.6-flash-tiered", "claude-haiku-4-6"),
+            ("ag/gemini-3.7-flash-tiered", "claude-haiku-4-6"),
             (
                 "cmc/deepseek/deepseek-v4-flash",
                 "claude-haiku-4-5-20251001",
@@ -408,7 +408,7 @@ mod tests {
                 &["none", "minimal", "low", "medium", "high", "xhigh", "max"],
             ),
             ("alibaba/qwen3.8-max", &[]),
-            ("ag/gemini-3.6-flash-tiered", &["low", "medium", "high"]),
+            ("ag/gemini-3.7-flash-tiered", &["low", "medium", "high"]),
             ("cmc/deepseek/deepseek-v4-flash", &["low", "high", "max"]),
             ("cmc/deepseek/deepseek-v4-pro", &["low", "high", "max"]),
             (
@@ -438,7 +438,7 @@ mod tests {
             ("gpt-5.6-terra", "cx/gpt-5.6-terra"),
             ("gpt-5.6-luna", "cx/gpt-5.6-luna"),
             ("gpt-5.5", "alibaba/qwen3.8-max"),
-            ("gpt-5.4", "ag/gemini-3.6-flash-tiered"),
+            ("gpt-5.4", "ag/gemini-3.7-flash-tiered"),
             ("gpt-5.4-mini", "cmc/deepseek/deepseek-v4-flash"),
             ("gpt-5.3-mini", "cmc/meta/muse-spark-1.2-contributor"),
             ("gpt-5.3", "gcli/grok-4.6"),

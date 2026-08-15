@@ -17,7 +17,7 @@ This document records the durable state, decisions, and verified facts for the `
 2. `cx/gpt-5.6-terra` â€” GPT 5.6 Terra â€” context 272k, output 128k, vision
 3. `cx/gpt-5.6-luna` â€” GPT 5.6 Luna â€” context 272k, output 128k, vision
 4. `alibaba/qwen3.8-max` â€” Qwen 3.8 Max â€” context 1M, output 64k, no vision
-5. `ag/gemini-3.6-flash-tiered` â€” Gemini 3.6 Flash â€” context 1M, output 64k, vision/audio/video
+5. `ag/gemini-3.7-flash-tiered` â€” Gemini 3.7 Flash â€” context 1M, output 64k, vision/audio/video
 6. `cmc/deepseek/deepseek-v4-flash` â€” DeepSeek V4 Flash â€” context 1M, output 384k, no vision
 7. `cmc/meta/muse-spark-1.2-contributor` â€” Muse Spark 1.2 â€” context 1M, output 128k, vision/audio/video
 
@@ -26,7 +26,7 @@ Retired (must never reappear in profiles): Poolside Laguna S 2.1, Poolside Lagun
 ## Reasoning-effort contracts (API-verified via 9router invalid-value probes; DeepSeek Pro from api-docs.deepseek.com/thinking_mode + Firecrawl)
 
 - GPT-5.6 Sol / Terra / Luna: `none, minimal, low, medium, high, xhigh, max`
-- Gemini 3.6 Flash: `low, medium, high`
+- Gemini 3.7 Flash: `low, medium, high`
 - Qwen 3.8 Max: no effort control
 - DeepSeek V4 Flash: `low, high, max` (thinking on by default at `high`; no off-toggle)
 - DeepSeek V4 Pro: `low, high, max` (same thinking_mode toggle as Flash; 1M context, 393k max output on Novita)
@@ -55,7 +55,7 @@ Claude Desktop picker routes (verified effort mapping):
 - GPT 5.6 Terra â†’ `claude-opus-4-7`
 - GPT 5.6 Luna â†’ `claude-opus-4-6`
 - Qwen 3.8 Max â†’ `claude-opus-4-5-20251101`
-- Gemini 3.6 Flash â†’ `claude-sonnet-4-6`
+- Gemini 3.7 Flash â†’ `claude-sonnet-4-6`
 - DeepSeek V4 Flash â†’ `claude-haiku-4-5-20251001`
 - Muse Spark 1.2 â†’ `claude-sonnet-4-5-20250920`
 

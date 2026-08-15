@@ -243,7 +243,7 @@ mod tests {
                 ("gpt-5.3-mini", "cmc/meta/muse-spark-1.2-contributor"),
                 ("gpt-5.4-mini", "cmc/deepseek/deepseek-v4-flash"),
                 ("gpt-5.3-turbo", "cmc/deepseek/deepseek-v4-pro"),
-                ("gpt-5.4", "ag/gemini-3.6-flash-tiered"),
+                ("gpt-5.4", "ag/gemini-3.7-flash-tiered"),
                 ("gpt-5.5", "alibaba/qwen3.8-max"),
             ]
         );

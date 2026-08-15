@@ -14,7 +14,7 @@ Claude Desktop routes by Anthropic alias. Any `claude-*` slug is accepted; only 
 | `claude-sonnet-4-5-20250920` | `cx/gpt-5.6-terra` | No — forced `max` |
 | `claude-sonnet-4-5` | `cx/gpt-5.6-luna` | No — forced `max` |
 | `claude-haiku-4-5-20251001` | `cmc/deepseek/deepseek-v4-flash` | No — forced `max` |
-| `claude-haiku-4-6` | `ag/gemini-3.6-flash-tiered` | No — forced `high` |
+| `claude-haiku-4-6` | `ag/gemini-3.7-flash-tiered` | No — forced `high` |
 | `claude-haiku-4-5` | `alibaba/qwen3.8-max` | No — forced `none` |
 
 Source: `src/catalog.rs` `MODELS[].desktop_alias`. Effort-capable set is `{ claude-opus-4-8, claude-opus-4-7, claude-opus-4-6, claude-opus-4-5-20251101, claude-sonnet-4-6 }` — only these render the picker. All other routes carry `forced_effort` in `src/catalog.rs`.
@@ -45,7 +45,7 @@ Any other `gpt-*` slug may be rejected by desktop builds that validate against t
 | `gpt-5.6-terra` | `cx/gpt-5.6-terra` | low / medium / high / xhigh / max / ultra |
 | `gpt-5.6-luna` | `cx/gpt-5.6-luna` | low / medium / high / xhigh / max |
 | `gpt-5.4-mini` | `cmc/deepseek/deepseek-v4-flash` | low / high / max |
-| `gpt-5.4` | `ag/gemini-3.6-flash-tiered` | low / medium / high |
+| `gpt-5.4` | `ag/gemini-3.7-flash-tiered` | low / medium / high |
 | `gpt-5.5` | `alibaba/qwen3.8-max` | *(none)* |
 | `gpt-5.3` *(aliased — see note above)* | `gcli/grok-4.6` | low / medium / high / xhigh / ultra (ultra→xhigh) |
 | `gpt-5.3-mini` *(aliased)* | `cmc/meta/muse-spark-1.2-contributor` | minimal / low / medium / high / xhigh / ultra (ultra→xhigh) |
