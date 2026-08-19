@@ -66,6 +66,13 @@ pub(super) fn run() -> Result<()> {
     let _ = std::fs::remove_file(&temp_file);
 
     println!("Successfully updated to v{latest_version}!");
+
+    if let Err(error) = crate::config::config_apply_saved() {
+        eprintln!("Update succeeded but reapplying saved configs failed: {error:#}");
+        eprintln!("Run `auranion config --apply` or `auranion config` to retry.");
+        return Ok(());
+    }
+
     Ok(())
 }
 

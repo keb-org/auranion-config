@@ -76,6 +76,10 @@ pub(super) fn configure() -> Result<()> {
     Ok(())
 }
 
+pub(crate) fn config_apply_saved() -> Result<()> {
+    apply_saved()
+}
+
 pub(super) fn apply_saved() -> Result<()> {
     let dirs = BaseDirs::new().context("cannot determine user directories")?;
     let data_dir = dirs.data_local_dir().join("auranion");
@@ -242,7 +246,6 @@ mod tests {
                 ("gpt-5.3", "gcli/grok-4.6"),
                 ("gpt-5.3-mini", "cmc/meta/muse-spark-1.2-contributor"),
                 ("gpt-5.4-mini", "cmc/deepseek/deepseek-v4-flash"),
-                ("gpt-5.3-turbo", "cmc/deepseek/deepseek-v4-pro"),
                 ("gpt-5.4", "ag/gemini-3.7-flash-tiered"),
                 ("gpt-5.5", "alibaba/qwen3.8-max"),
             ]

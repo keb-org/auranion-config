@@ -29,7 +29,6 @@ Retired (must never reappear in profiles): Poolside Laguna S 2.1, Poolside Lagun
 - Gemini 3.7 Flash: `low, medium, high`
 - Qwen 3.8 Max: no effort control
 - DeepSeek V4 Flash: `low, high, max` (thinking on by default at `high`; no off-toggle)
-- DeepSeek V4 Pro: `low, high, max` (same thinking_mode toggle as Flash; 1M context, 393k max output on Novita)
 - Muse Spark 1.2: `minimal, low, medium, high, xhigh` (`none` returns HTTP 400)
 - Grok 4.6: `low, medium, high, xhigh` (default `high`, cannot disable; from docs.x.ai)
 
@@ -46,7 +45,7 @@ Exact contract written by `merge_desktop`:
 - `inferenceGatewayApiKey`: saved Auranion key
 - `inferenceGatewayAuthScheme`: `x-api-key`
 - `modelDiscoveryEnabled`: `false`
-- `inferenceModels`: nine entries `{ name: desktop_alias, labelOverride: desktop_label, supports1m }`
+- `inferenceModels`: eight entries `{ name: desktop_alias, labelOverride: desktop_label, supports1m }`
 
 Removes obsolete `anthropicBaseUrl` / `anthropicApiKey`. No local proxy, supervisor, scheduled task, localhost listener, or certificate.
 
@@ -54,12 +53,12 @@ Claude Desktop picker routes (verified effort mapping):
 - GPT 5.6 Sol â†’ `claude-opus-4-8`
 - GPT 5.6 Terra â†’ `claude-opus-4-7`
 - GPT 5.6 Luna â†’ `claude-opus-4-6`
-- Qwen 3.8 Max â†’ `claude-opus-4-5-20251101`
+- Qwen 3.8 Max â†’ `claude-haiku-4-5` (Pro's `claude-opus-4-5-20251101` now spare)
 - Gemini 3.7 Flash â†’ `claude-sonnet-4-6`
 - DeepSeek V4 Flash â†’ `claude-haiku-4-5-20251001`
 - Muse Spark 1.2 â†’ `claude-sonnet-4-5-20250920`
 
-Effort-capable desktop aliases (render Effort control): opus 4.8/4.7/4.6/4.5-20251101 + sonnet-4-6. Active: Sol (opus-4-8), Grok 4.6 (opus-4-7, ultra→xhigh), Muse Spark 1.2 (opus-4-6, ultra→xhigh), DeepSeek V4 Pro (opus-4-5-20251101). Sonnet-4-6 spare. Non-effort routes carry `forced_effort`: Flash max, Terra max, Luna max, Gemini high, Qwen none.
+Effort-capable desktop aliases (render Effort control): opus 4.8/4.7/4.6/4.5-20251101 + sonnet-4-6. Active: Sol (opus-4-8), Grok 4.6 (opus-4-7, ultra→xhigh), Muse Spark 1.2 (opus-4-6, ultra→xhigh). `claude-opus-4-5-20251101` + `claude-sonnet-4-6` spare (Pro removed). Non-effort routes carry `forced_effort`: Flash max, Terra max, Luna max, Gemini high, Qwen none.
 
 Verified end-to-end: `claude-opus-4-8` returns upstream `gpt-5.6-sol`; `claude-sonnet-4-6` streams SSE HTTP 200.
 
@@ -75,7 +74,7 @@ Writes `~/.claude/settings.json` env:
 Writes:
 - `~/.codex/config.toml`: removes `preferred_auth_method`, global `model`, `model_provider`. Sets `model_catalog_json`, `[model_providers.auranion]` (base_url `https://agent.auranion.com/v1`, `env_key=OPENAI_API_KEY`, `wire_api=responses`), `agents.subagent` model `cx/gpt-5.6-sol`, named profiles for each model.
 - `~/.codex/model-catalogs/auranion.json`: generated catalog. `supported_reasoning_levels` per model from the effort contract; `default_reasoning_level=medium` only when the model has efforts. No `default_reasoning_level` for Qwen/DeepSeek.
-- `~/.codex/desktop-model-providers.json`: `version:1`, `default_provider:"openai"`, providers `openai` + `auranion`, and `model_providers` mapping all nine slugs to `auranion`.
+- `~/.codex/desktop-model-providers.json`: `version:1`, `default_provider:"openai"`, providers `openai` + `auranion`, and `model_providers` mapping all eight slugs to `auranion`.
 
 Rules:
 - Do NOT set global `model` or `model_provider`.

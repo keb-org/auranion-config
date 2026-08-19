@@ -9,8 +9,7 @@ Claude Desktop routes by Anthropic alias. Any `claude-*` slug is accepted; only 
 | `claude-opus-4-8` | `cx/gpt-5.6-sol` | Yes — user picks effort |
 | `claude-opus-4-7` | `gcli/grok-4.6` | Yes (ultra→xhigh) |
 | `claude-opus-4-6` | `cmc/meta/muse-spark-1.2-contributor` | Yes (ultra→xhigh) |
-| `claude-opus-4-5-20251101` | `cmc/deepseek/deepseek-v4-pro` | Yes |
-| `claude-sonnet-4-6` | *(spare — not assigned)* | Yes |
+| `claude-opus-4-5-20251101` | *(spare — not assigned)* | Yes |
 | `claude-sonnet-4-5-20250920` | `cx/gpt-5.6-terra` | No — forced `max` |
 | `claude-sonnet-4-5` | `cx/gpt-5.6-luna` | No — forced `max` |
 | `claude-haiku-4-5-20251001` | `cmc/deepseek/deepseek-v4-flash` | No — forced `max` |
@@ -21,7 +20,7 @@ Source: `src/catalog.rs` `MODELS[].desktop_alias`. Effort-capable set is `{ clau
 
 ## ChatGPT / Codex Desktop — accepted `codex_desktop_alias` values
 
-ChatGPT Desktop's Model Picker only renders **native `gpt-*` slugs** it knows about. Custom slugs (`grok-4.6`, `muse-spark-1.2`, `deepseek-v4-pro`) are valid API aliases but are **filtered out of the picker** and never appear in the dropdown, so they are aliased behind `gpt-5.3*` IDs here.
+ChatGPT Desktop's Model Picker only renders **native `gpt-*` slugs** it knows about. Custom slugs (`grok-4.6`, `muse-spark-1.2`) are valid API aliases but are **filtered out of the picker** and never appear in the dropdown, so they are aliased behind `gpt-5.3*` IDs here.
 
 ### Official native slugs the picker will render (from `~/.codex/models_cache.json`)
 
@@ -49,9 +48,8 @@ Any other `gpt-*` slug may be rejected by desktop builds that validate against t
 | `gpt-5.5` | `alibaba/qwen3.8-max` | *(none)* |
 | `gpt-5.3` *(aliased — see note above)* | `gcli/grok-4.6` | low / medium / high / xhigh / ultra (ultra→xhigh) |
 | `gpt-5.3-mini` *(aliased)* | `cmc/meta/muse-spark-1.2-contributor` | minimal / low / medium / high / xhigh / ultra (ultra→xhigh) |
-| `gpt-5.3-turbo` *(aliased)* | `cmc/deepseek/deepseek-v4-pro` | low / high / max |
 
-The three `gpt-5.3*` rows exist only so non-GPT providers appear in the ChatGPT Desktop dropdown; they have no upstream `gpt-5.3` model. See `COMBOS.md` for the matching 9router combos.
+The two `gpt-5.3*` rows exist only so non-GPT providers appear in the ChatGPT Desktop dropdown; they have no upstream `gpt-5.3` model. See `COMBOS.md` for the matching 9router combos.
 
 ### Verification
 
