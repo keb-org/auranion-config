@@ -1,9 +1,11 @@
 use anyhow::{Context, Result};
-use keyring::{Entry, Error};
-#[cfg(target_os = "linux")]
-use std::{fs, io::Write, path::PathBuf};
+use keyring::Entry;
+#[cfg(not(target_os = "linux"))]
+use keyring::Error;
 #[cfg(all(test, not(target_os = "linux")))]
 use std::{fs, io::Write};
+#[cfg(target_os = "linux")]
+use std::{fs, io::Write, path::PathBuf};
 
 const SERVICE: &str = "auranion";
 const ACCOUNT: &str = "api-key";
@@ -70,7 +72,10 @@ pub(super) fn save(key: &str) -> Result<()> {
 pub(super) fn delete() -> Result<()> {
     #[cfg(target_os = "linux")]
     {
-        match entry().ok().and_then(|entry| entry.delete_credential().ok()) {
+        match entry()
+            .ok()
+            .and_then(|entry| entry.delete_credential().ok())
+        {
             Some(()) => fallback_delete(),
             None => fallback_delete(),
         }
@@ -100,7 +105,8 @@ fn fallback_save(key: &str) -> Result<()> {
 #[cfg(target_os = "linux")]
 fn fallback_delete() -> Result<()> {
     match fs::remove_file(fallback_path()) {
-        Ok(()) | Err(std::io::ErrorKind::NotFound) => Ok(()),
+        Ok(()) => Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(()),
         Err(error) => Err(error).context("delete Auranion API key fallback file"),
     }
 }

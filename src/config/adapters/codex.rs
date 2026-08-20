@@ -1784,8 +1784,7 @@ mod tests {
                 .collect();
             let expected_desktop = supported_efforts(model.codex_desktop_reasoning_efforts);
             assert_eq!(
-                desktop_efforts,
-                expected_desktop,
+                desktop_efforts, expected_desktop,
                 "desktop catalog entry for {} must only emit levels the codex CLI accepts",
                 model.codex_desktop_alias
             );
