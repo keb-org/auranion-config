@@ -488,23 +488,19 @@ fn ensure_table(item: &mut Item) -> &mut Table {
 
 fn catalog_value() -> Value {
     let desktop = MODELS.iter().enumerate().map(|(priority, model)| {
+        let efforts = supported_efforts(model.codex_desktop_reasoning_efforts);
         catalog_entry(
             model,
             model.codex_desktop_alias,
             codex_desktop_label(model.codex_desktop_alias),
             format!("{} via Auranion 9router", model.codex_desktop_alias),
-            model.codex_desktop_reasoning_efforts,
+            &efforts,
             "list",
             priority,
         )
     });
     let cli = MODELS.iter().enumerate().map(|(priority, model)| {
-        let efforts = model
-            .reasoning_efforts
-            .iter()
-            .copied()
-            .filter(|effort| CODEX_REASONING_EFFORTS.contains(effort))
-            .collect::<Vec<_>>();
+        let efforts = supported_efforts(model.reasoning_efforts);
         catalog_entry(
             model,
             model.upstream,
@@ -516,6 +512,18 @@ fn catalog_value() -> Value {
         )
     });
     json!({ "models": desktop.chain(cli).collect::<Vec<_>>() })
+}
+
+/// The codex CLI parses the same `auranion.json` catalog for both the desktop
+/// and CLI model lists, and its enum only accepts these levels. Catalog
+/// entries must never emit `max`/`ultra`, or the whole file fails to parse
+/// (`unknown variant 'max'`).
+fn supported_efforts<'a>(efforts: &'a [&'a str]) -> Vec<&'a str> {
+    efforts
+        .iter()
+        .copied()
+        .filter(|effort| CODEX_REASONING_EFFORTS.contains(effort))
+        .collect()
 }
 
 fn catalog_entry(
@@ -1768,23 +1776,38 @@ mod tests {
                 .expect("CLI entry missing");
             assert_eq!(desktop["visibility"], "list");
             assert_eq!(cli["visibility"], "hide");
+            let desktop_efforts: Vec<_> = desktop["supported_reasoning_levels"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|effort| effort["effort"].as_str().unwrap())
+                .collect();
+            let expected_desktop = supported_efforts(model.codex_desktop_reasoning_efforts);
             assert_eq!(
-                desktop["supported_reasoning_levels"]
+                desktop_efforts,
+                expected_desktop,
+                "desktop catalog entry for {} must only emit levels the codex CLI accepts",
+                model.codex_desktop_alias
+            );
+            let expected_cli = supported_efforts(model.reasoning_efforts);
+            assert_eq!(
+                cli["supported_reasoning_levels"]
                     .as_array()
                     .unwrap()
                     .iter()
                     .map(|effort| effort["effort"].as_str().unwrap())
                     .collect::<Vec<_>>(),
-                model.codex_desktop_reasoning_efforts
+                expected_cli,
+                "cli catalog entry for {} must only emit levels the codex CLI accepts",
+                model.upstream
             );
             assert!(
-                cli["supported_reasoning_levels"]
-                    .as_array()
-                    .unwrap()
+                expected_desktop
                     .iter()
+                    .chain(expected_cli.iter())
                     .all(|effort| matches!(
-                        effort["effort"].as_str(),
-                        Some("none" | "minimal" | "low" | "medium" | "high" | "xhigh")
+                        *effort,
+                        "none" | "minimal" | "low" | "medium" | "high" | "xhigh"
                     ))
             );
         }

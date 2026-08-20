@@ -38,16 +38,18 @@ Any other `gpt-*` slug may be rejected by desktop builds that validate against t
 
 ### Routing table actually written by `auranion config` (`codex_desktop_alias` → upstream)
 
+The catalog `supported_reasoning_levels` is filtered through `CODEX_REASONING_EFFORTS` — the codex CLI enum only accepts `none / minimal / low / medium / high / xhigh` and fails to parse the whole catalog on `max`/`ultra`. The ChatGPT Desktop picker reads its own `models_cache.json` (native slugs above); it is not driven by these levels.
+
 | App alias shown in picker | Routes to | Effort exposed to picker |
 | --- | --- | --- |
-| `gpt-5.6-sol` | `cx/gpt-5.6-sol` | low / medium / high / xhigh / max / ultra |
-| `gpt-5.6-terra` | `cx/gpt-5.6-terra` | low / medium / high / xhigh / max / ultra |
-| `gpt-5.6-luna` | `cx/gpt-5.6-luna` | low / medium / high / xhigh / max |
-| `gpt-5.4-mini` | `cmc/deepseek/deepseek-v4-flash` | low / high / max |
+| `gpt-5.6-sol` | `cx/gpt-5.6-sol` | low / medium / high / xhigh |
+| `gpt-5.6-terra` | `cx/gpt-5.6-terra` | low / medium / high / xhigh |
+| `gpt-5.6-luna` | `cx/gpt-5.6-luna` | low / medium / high / xhigh |
+| `gpt-5.4-mini` | `cmc/deepseek/deepseek-v4-flash` | low / high |
 | `gpt-5.4` | `ag/gemini-3.7-flash-tiered` | low / medium / high |
 | `gpt-5.5` | `alibaba/qwen3.8-max` | *(none)* |
-| `gpt-5.3` *(aliased — see note above)* | `gcli/grok-4.6` | low / medium / high / xhigh / ultra (ultra→xhigh) |
-| `gpt-5.3-mini` *(aliased)* | `cmc/meta/muse-spark-1.2-contributor` | minimal / low / medium / high / xhigh / ultra (ultra→xhigh) |
+| `gpt-5.3` *(aliased — see note above)* | `gcli/grok-4.6` | low / medium / high / xhigh |
+| `gpt-5.3-mini` *(aliased)* | `cmc/meta/muse-spark-1.2-contributor` | minimal / low / medium / high / xhigh |
 
 The two `gpt-5.3*` rows exist only so non-GPT providers appear in the ChatGPT Desktop dropdown; they have no upstream `gpt-5.3` model. See `COMBOS.md` for the matching 9router combos.
 
