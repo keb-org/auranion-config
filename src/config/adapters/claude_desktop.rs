@@ -371,6 +371,10 @@ mod tests {
         );
         assert_eq!(
             models[5].get("name").and_then(Value::as_str),
+            Some("claude-opus-4-5-20251101")
+        );
+        assert_eq!(
+            models[6].get("name").and_then(Value::as_str),
             Some("claude-haiku-4-5-20251001")
         );
 

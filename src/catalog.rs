@@ -127,6 +127,24 @@ pub const MODELS: &[Model] = &[
         forced_effort: None,
     },
     Model {
+        upstream: "oc/x-preview-f-free",
+        label: "Ox Alpha",
+        desktop_alias: "claude-opus-4-5-20251101",
+        desktop_label: "Ox Alpha",
+        codex_desktop_alias: "gpt-5.3-turbo",
+        codex_desktop_reasoning_efforts: &[],
+        score: None,
+        context: Some(1_048_576),
+        output: Some(131_072),
+        reasoning: true,
+        reasoning_efforts: &[],
+        vision: true,
+        audio: false,
+        video: true,
+        native_claude: false,
+        forced_effort: None,
+    },
+    Model {
         upstream: "cmc/deepseek/deepseek-v4-flash",
         label: "DeepSeek V4 Flash",
         desktop_alias: "claude-haiku-4-5-20251001",
@@ -218,6 +236,7 @@ mod tests {
             "cmc/deepseek/deepseek-v4-flash",
             "cmc/meta/muse-spark-1.2-contributor",
             "gcli/grok-4.6",
+            "oc/x-preview-f-free",
         ];
 
         assert_eq!(upstream.len(), expected.len());
@@ -237,6 +256,7 @@ mod tests {
                 "GPT 5.6 Luna",
                 "Grok 4.6",
                 "Muse Spark 1.2",
+                "Ox Alpha",
                 "DeepSeek V4 Flash",
                 "Gemini 3.7 Flash",
                 "Qwen 3.8 Max",
@@ -295,6 +315,7 @@ mod tests {
             "cx/gpt-5.6-sol",
             "gcli/grok-4.6",
             "cmc/meta/muse-spark-1.2-contributor",
+            "oc/x-preview-f-free",
         ] {
             let model = MODELS
                 .iter()
@@ -323,6 +344,7 @@ mod tests {
             ),
             ("cmc/meta/muse-spark-1.2-contributor", "claude-opus-4-6"),
             ("gcli/grok-4.6", "claude-opus-4-7"),
+            ("oc/x-preview-f-free", "claude-opus-4-5-20251101"),
         ];
 
         for (upstream, desktop_alias) in expected {
@@ -390,6 +412,7 @@ mod tests {
                 &["minimal", "low", "medium", "high", "xhigh"],
             ),
             ("gcli/grok-4.6", &["low", "medium", "high", "xhigh"]),
+            ("oc/x-preview-f-free", &[]),
         ];
 
         for (upstream, efforts) in expected {
@@ -416,6 +439,7 @@ mod tests {
             ("gpt-5.4-mini", "cmc/deepseek/deepseek-v4-flash"),
             ("gpt-5.3-mini", "cmc/meta/muse-spark-1.2-contributor"),
             ("gpt-5.3", "gcli/grok-4.6"),
+            ("gpt-5.3-turbo", "oc/x-preview-f-free"),
         ];
         let aliases: HashSet<_> = MODELS
             .iter()
@@ -451,6 +475,7 @@ mod tests {
                 &["minimal", "low", "medium", "high", "xhigh", "ultra"],
             ),
             ("gpt-5.3", &["low", "medium", "high", "xhigh", "ultra"]),
+            ("gpt-5.3-turbo", &[]),
         ];
 
         for (alias, efforts) in expected {
