@@ -9,7 +9,7 @@ Claude Desktop routes by Anthropic alias. Any `claude-*` slug is accepted; only 
 | `claude-opus-4-8` | `cx/gpt-5.6-sol` | Yes — user picks effort |
 | `claude-opus-4-7` | `gcli/grok-4.6` | Yes (ultra→xhigh) |
 | `claude-opus-4-6` | `cmc/meta/muse-spark-1.2-contributor` | Yes (ultra→xhigh) |
-| `claude-opus-4-5-20251101` | `oc/x-preview-f-free` | Yes |
+| `claude-opus-4-5-20251101` | `cmc/stealth/ox-alpha` | Yes |
 | `claude-sonnet-4-5-20250920` | `cx/gpt-5.6-terra` | No — forced `max` |
 | `claude-sonnet-4-5` | `cx/gpt-5.6-luna` | No — forced `max` |
 | `claude-haiku-4-5-20251001` | `cmc/deepseek/deepseek-v4-flash` | No — forced `max` |
@@ -50,7 +50,7 @@ The catalog `supported_reasoning_levels` is filtered through `CODEX_REASONING_EF
 | `gpt-5.5` | `alibaba/qwen3.8-max` | *(none)* |
 | `gpt-5.3` *(aliased — see note above)* | `gcli/grok-4.6` | low / medium / high / xhigh |
 | `gpt-5.3-mini` *(aliased)* | `cmc/meta/muse-spark-1.2-contributor` | minimal / low / medium / high / xhigh |
-| `gpt-5.3-turbo` *(aliased)* | `oc/x-preview-f-free` | *(none)* |
+| `gpt-5.3-turbo` *(aliased)* | `cmc/stealth/ox-alpha` | *(none)* |
 
 The three `gpt-5.3*` rows exist only so non-GPT providers appear in the ChatGPT Desktop dropdown; they have no upstream `gpt-5.3` model. See `COMBOS.md` for the matching 9router combos.
 

@@ -5,7 +5,7 @@
 | `claude-sonnet-4-5` | `cx/gpt-5.6-luna` |
 | `claude-opus-4-7` | `gcli/grok-4.6` |
 | `claude-opus-4-6` | `cmc/meta/muse-spark-1.2-contributor` |
-| `claude-opus-4-5-20251101` | `oc/x-preview-f-free` |
+| `claude-opus-4-5-20251101` | `cmc/stealth/ox-alpha` |
 | `claude-haiku-4-5-20251001` | `cmc/deepseek/deepseek-v4-flash` |
 | `claude-haiku-4-6` | `ag/gemini-3.7-flash-tiered` |
 | `claude-haiku-4-5` | `alibaba/qwen3.8-max` |
@@ -14,7 +14,7 @@
 | `gpt-5.6-luna` | `cx/gpt-5.6-luna` |
 | `gpt-5.3` | `gcli/grok-4.6` |
 | `gpt-5.3-mini` | `cmc/meta/muse-spark-1.2-contributor` |
-| `gpt-5.3-turbo` | `oc/x-preview-f-free` |
+| `gpt-5.3-turbo` | `cmc/stealth/ox-alpha` |
 | `gpt-5.4-mini` | `cmc/deepseek/deepseek-v4-flash` |
 | `gpt-5.4` | `ag/gemini-3.7-flash-tiered` |
 | `gpt-5.5` | `alibaba/qwen3.8-max` |

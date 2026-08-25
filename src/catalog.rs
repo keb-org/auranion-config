@@ -127,7 +127,7 @@ pub const MODELS: &[Model] = &[
         forced_effort: None,
     },
     Model {
-        upstream: "oc/x-preview-f-free",
+        upstream: "cmc/stealth/ox-alpha",
         label: "Ox Alpha",
         desktop_alias: "claude-opus-4-5-20251101",
         desktop_label: "Ox Alpha",
@@ -236,7 +236,7 @@ mod tests {
             "cmc/deepseek/deepseek-v4-flash",
             "cmc/meta/muse-spark-1.2-contributor",
             "gcli/grok-4.6",
-            "oc/x-preview-f-free",
+            "cmc/stealth/ox-alpha",
         ];
 
         assert_eq!(upstream.len(), expected.len());
@@ -315,7 +315,7 @@ mod tests {
             "cx/gpt-5.6-sol",
             "gcli/grok-4.6",
             "cmc/meta/muse-spark-1.2-contributor",
-            "oc/x-preview-f-free",
+            "cmc/stealth/ox-alpha",
         ] {
             let model = MODELS
                 .iter()
@@ -344,7 +344,7 @@ mod tests {
             ),
             ("cmc/meta/muse-spark-1.2-contributor", "claude-opus-4-6"),
             ("gcli/grok-4.6", "claude-opus-4-7"),
-            ("oc/x-preview-f-free", "claude-opus-4-5-20251101"),
+            ("cmc/stealth/ox-alpha", "claude-opus-4-5-20251101"),
         ];
 
         for (upstream, desktop_alias) in expected {
@@ -412,7 +412,7 @@ mod tests {
                 &["minimal", "low", "medium", "high", "xhigh"],
             ),
             ("gcli/grok-4.6", &["low", "medium", "high", "xhigh"]),
-            ("oc/x-preview-f-free", &[]),
+            ("cmc/stealth/ox-alpha", &[]),
         ];
 
         for (upstream, efforts) in expected {
@@ -439,7 +439,7 @@ mod tests {
             ("gpt-5.4-mini", "cmc/deepseek/deepseek-v4-flash"),
             ("gpt-5.3-mini", "cmc/meta/muse-spark-1.2-contributor"),
             ("gpt-5.3", "gcli/grok-4.6"),
-            ("gpt-5.3-turbo", "oc/x-preview-f-free"),
+            ("gpt-5.3-turbo", "cmc/stealth/ox-alpha"),
         ];
         let aliases: HashSet<_> = MODELS
             .iter()
