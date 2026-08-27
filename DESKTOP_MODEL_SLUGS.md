@@ -2,7 +2,7 @@
 
 ## Claude Desktop — accepted `desktop_alias` values
 
-Claude Desktop routes by Anthropic alias. Any `claude-*` slug is accepted; only the five below render an **Effort** control in the Model Picker.
+Claude Desktop routes by Anthropic alias. Any `claude-*` slug is accepted; only the four below render an **Effort** control in the Model Picker.
 
 | Slug (`desktop_alias`) | Route → upstream | Effort control |
 | --- | --- | --- |
@@ -10,13 +10,12 @@ Claude Desktop routes by Anthropic alias. Any `claude-*` slug is accepted; only 
 | `claude-opus-4-7` | `gcli/grok-4.6` | Yes (ultra→xhigh) |
 | `claude-opus-4-6` | `cmc/meta/muse-spark-1.2-contributor` | Yes (ultra→xhigh) |
 | `claude-opus-4-5-20251101` | `cmc/z-ai/glm-5.3-flash` | Yes |
-| `claude-sonnet-4-6` | `nousresearch/hermes-4-405b` | Yes |
 | `claude-sonnet-4-5-20250920` | `cx/gpt-5.6-terra` | No — forced `max` |
 | `claude-sonnet-4-5` | `cx/gpt-5.6-luna` | No — forced `max` |
 | `claude-haiku-4-5-20251001` | `cmc/deepseek/deepseek-v4-flash` | No — forced `max` |
 | `claude-haiku-4-6` | `ag/gemini-3.7-flash-tiered` | No — forced `high` |
 
-Source: `src/catalog.rs` `MODELS[].desktop_alias`. Effort-capable set is `{ claude-opus-4-8, claude-opus-4-7, claude-opus-4-6, claude-opus-4-5-20251101, claude-sonnet-4-6 }` — only these render the picker. All other routes carry `forced_effort` in `src/catalog.rs`.
+Source: `src/catalog.rs` `MODELS[].desktop_alias`. Effort-capable set is `{ claude-opus-4-8, claude-opus-4-7, claude-opus-4-6, claude-opus-4-5-20251101 }` — only these render the picker. All other routes carry `forced_effort` in `src/catalog.rs`.
 
 ## ChatGPT / Codex Desktop — accepted `codex_desktop_alias` values
 
@@ -50,9 +49,8 @@ The catalog `supported_reasoning_levels` is filtered through `CODEX_REASONING_EF
 | `gpt-5.3` *(aliased — see note above)* | `gcli/grok-4.6` | low / medium / high / xhigh |
 | `gpt-5.3-mini` *(aliased)* | `cmc/meta/muse-spark-1.2-contributor` | minimal / low / medium / high / xhigh |
 | `gpt-5.3-turbo` *(aliased)* | `cmc/z-ai/glm-5.3-flash` | *(none)* |
-| `gpt-5.3-large` *(aliased)* | `nousresearch/hermes-4-405b` | *(none)* |
 
-The four `gpt-5.3*` rows exist only so non-GPT providers appear in the ChatGPT Desktop dropdown; they have no upstream `gpt-5.3` model. See `COMBOS.md` for the matching 9 router combos.
+The three `gpt-5.3*` rows exist only so non-GPT providers appear in the ChatGPT Desktop dropdown; they have no upstream `gpt-5.3` model. See `COMBOS.md` for the matching 8 router combos.
 
 ### Verification
 

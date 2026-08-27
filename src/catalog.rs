@@ -180,24 +180,6 @@ pub const MODELS: &[Model] = &[
         native_claude: false,
         forced_effort: Some("high"),
     },
-    Model {
-        upstream: "nousresearch/hermes-4-405b",
-        label: "Hermes 4 405B",
-        desktop_alias: "claude-sonnet-4-6",
-        desktop_label: "Hermes 4 405B",
-        codex_desktop_alias: "gpt-5.3-large",
-        codex_desktop_reasoning_efforts: &[],
-        score: None,
-        context: Some(131_072),
-        output: Some(131_072),
-        reasoning: true,
-        reasoning_efforts: &[],
-        vision: false,
-        audio: false,
-        video: false,
-        native_claude: false,
-        forced_effort: None,
-    },
 ];
 
 #[cfg(test)]
@@ -236,7 +218,6 @@ mod tests {
             "cmc/meta/muse-spark-1.2-contributor",
             "gcli/grok-4.6",
             "cmc/z-ai/glm-5.3-flash",
-            "nousresearch/hermes-4-405b",
         ];
 
         assert_eq!(upstream.len(), expected.len());
@@ -259,7 +240,6 @@ mod tests {
                 "GLM 5.3 Flash",
                 "DeepSeek V4 Flash",
                 "Gemini 3.7 Flash",
-                "Hermes 4 405B",
             ]
         );
     }
@@ -341,7 +321,6 @@ mod tests {
             ("cmc/meta/muse-spark-1.2-contributor", "claude-opus-4-6"),
             ("gcli/grok-4.6", "claude-opus-4-7"),
             ("cmc/z-ai/glm-5.3-flash", "claude-opus-4-5-20251101"),
-            ("nousresearch/hermes-4-405b", "claude-sonnet-4-6"),
         ];
 
         for (upstream, desktop_alias) in expected {
@@ -409,7 +388,6 @@ mod tests {
             ),
             ("gcli/grok-4.6", &["low", "medium", "high", "xhigh"]),
             ("cmc/z-ai/glm-5.3-flash", &[]),
-            ("nousresearch/hermes-4-405b", &[]),
         ];
 
         for (upstream, efforts) in expected {
@@ -436,7 +414,6 @@ mod tests {
             ("gpt-5.3-mini", "cmc/meta/muse-spark-1.2-contributor"),
             ("gpt-5.3", "gcli/grok-4.6"),
             ("gpt-5.3-turbo", "cmc/z-ai/glm-5.3-flash"),
-            ("gpt-5.3-large", "nousresearch/hermes-4-405b"),
         ];
         let aliases: HashSet<_> = MODELS
             .iter()
@@ -472,7 +449,6 @@ mod tests {
             ),
             ("gpt-5.3", &["low", "medium", "high", "xhigh", "ultra"]),
             ("gpt-5.3-turbo", &[]),
-            ("gpt-5.3-large", &[]),
         ];
 
         for (alias, efforts) in expected {
