@@ -243,6 +243,7 @@ mod tests {
                 ("gpt-5.4-mini", "cmc/deepseek/deepseek-v4-flash"),
                 ("gpt-5.4", "ag/gemini-3.7-flash-tiered"),
                 ("gpt-5.5", "alibaba/qwen3.8-max"),
+                ("gpt-5.3-large", "nousresearch/hermes-4-405b"),
             ]
         );
     }
