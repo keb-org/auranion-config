@@ -308,12 +308,8 @@ mod tests {
         let root = read_json(&path).unwrap();
         let models = root["provider"]["auranion"]["models"].as_object().unwrap();
         assert_eq!(models.len(), MODELS.len());
-        // Qwen has no variants (no reasoning_efforts)
-        let qwen = &models["alibaba/qwen3.8-max"];
-        assert!(
-            qwen.get("variants").is_none(),
-            "qwen should have no variants"
-        );
+        let glm = &models["cmc/z-ai/glm-5.3-flash"];
+        assert!(glm.get("variants").is_none(), "glm should have no variants");
         // DeepSeek has low/high/max only
         let ds = &models["cmc/deepseek/deepseek-v4-flash"];
         let variants = ds.get("variants").and_then(|v| v.as_object()).unwrap();

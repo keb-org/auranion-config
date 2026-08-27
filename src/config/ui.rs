@@ -10,8 +10,8 @@ use ratatui::{
 use super::integration::Integration;
 
 pub(super) fn select_integrations(
-    detected: &[bool; 5],
-    defaults: &[bool; 5],
+    detected: &[bool; 6],
+    defaults: &[bool; 6],
 ) -> Result<Vec<Integration>> {
     ratatui::run(|terminal| {
         let mut selected = *defaults;
@@ -447,6 +447,19 @@ fn get_integration_details<'a>(
         Integration::OpenCode => {
             lines.push(Line::from("  • ~/.config/opencode/opencode.jsonc"));
             lines.push(Line::from("  • ~/.local/share/opencode/auth.json"));
+        }
+        Integration::Hermes => {
+            if cfg!(windows) {
+                lines.push(Line::from("  • %LOCALAPPDATA%\\hermes\\config.yaml"));
+            } else {
+                lines.push(Line::from("  • ~/.hermes/config.yaml"));
+                lines.push(Line::from("    (or $HERMES_HOME/config.yaml)"));
+            }
+            lines.push(Line::from(format!(
+                "  • provider `{}` → {}",
+                "auranion",
+                super::BASE_URL
+            )));
         }
     }
 

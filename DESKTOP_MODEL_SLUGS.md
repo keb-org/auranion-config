@@ -9,13 +9,12 @@ Claude Desktop routes by Anthropic alias. Any `claude-*` slug is accepted; only 
 | `claude-opus-4-8` | `cx/gpt-5.6-sol` | Yes — user picks effort |
 | `claude-opus-4-7` | `gcli/grok-4.6` | Yes (ultra→xhigh) |
 | `claude-opus-4-6` | `cmc/meta/muse-spark-1.2-contributor` | Yes (ultra→xhigh) |
-| `claude-opus-4-5-20251101` | `cmc/stealth/ox-alpha` | Yes |
+| `claude-opus-4-5-20251101` | `cmc/z-ai/glm-5.3-flash` | Yes |
 | `claude-sonnet-4-6` | `nousresearch/hermes-4-405b` | Yes |
 | `claude-sonnet-4-5-20250920` | `cx/gpt-5.6-terra` | No — forced `max` |
 | `claude-sonnet-4-5` | `cx/gpt-5.6-luna` | No — forced `max` |
 | `claude-haiku-4-5-20251001` | `cmc/deepseek/deepseek-v4-flash` | No — forced `max` |
 | `claude-haiku-4-6` | `ag/gemini-3.7-flash-tiered` | No — forced `high` |
-| `claude-haiku-4-5` | `alibaba/qwen3.8-max` | No — forced `none` |
 
 Source: `src/catalog.rs` `MODELS[].desktop_alias`. Effort-capable set is `{ claude-opus-4-8, claude-opus-4-7, claude-opus-4-6, claude-opus-4-5-20251101, claude-sonnet-4-6 }` — only these render the picker. All other routes carry `forced_effort` in `src/catalog.rs`.
 
@@ -48,13 +47,12 @@ The catalog `supported_reasoning_levels` is filtered through `CODEX_REASONING_EF
 | `gpt-5.6-luna` | `cx/gpt-5.6-luna` | low / medium / high / xhigh |
 | `gpt-5.4-mini` | `cmc/deepseek/deepseek-v4-flash` | low / high |
 | `gpt-5.4` | `ag/gemini-3.7-flash-tiered` | low / medium / high |
-| `gpt-5.5` | `alibaba/qwen3.8-max` | *(none)* |
 | `gpt-5.3` *(aliased — see note above)* | `gcli/grok-4.6` | low / medium / high / xhigh |
 | `gpt-5.3-mini` *(aliased)* | `cmc/meta/muse-spark-1.2-contributor` | minimal / low / medium / high / xhigh |
-| `gpt-5.3-turbo` *(aliased)* | `cmc/stealth/ox-alpha` | *(none)* |
+| `gpt-5.3-turbo` *(aliased)* | `cmc/z-ai/glm-5.3-flash` | *(none)* |
 | `gpt-5.3-large` *(aliased)* | `nousresearch/hermes-4-405b` | *(none)* |
 
-The four `gpt-5.3*` rows exist only so non-GPT providers appear in the ChatGPT Desktop dropdown; they have no upstream `gpt-5.3` model. See `COMBOS.md` for the matching 10 router combos.
+The four `gpt-5.3*` rows exist only so non-GPT providers appear in the ChatGPT Desktop dropdown; they have no upstream `gpt-5.3` model. See `COMBOS.md` for the matching 9 router combos.
 
 ### Verification
 

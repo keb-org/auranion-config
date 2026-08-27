@@ -1,6 +1,7 @@
 mod claude_code;
 mod claude_desktop;
 mod codex;
+mod hermes;
 mod opencode;
 
 use anyhow::Result;
@@ -15,6 +16,7 @@ pub(super) fn detect(integration: Integration, dirs: &BaseDirs) -> bool {
         Integration::ClaudeCode => claude_code::detect(dirs),
         Integration::CodexDesktop | Integration::CodexCli => codex::detect(dirs),
         Integration::OpenCode => opencode::detect(dirs),
+        Integration::Hermes => hermes::detect(dirs),
     }
 }
 
@@ -25,6 +27,7 @@ pub(super) fn diagnostics(integration: Integration, dirs: &BaseDirs) -> Vec<Stri
         Integration::CodexDesktop => codex::desktop_diagnostics(dirs),
         Integration::CodexCli => codex::diagnostics(dirs),
         Integration::OpenCode => opencode::diagnostics(dirs),
+        Integration::Hermes => hermes::diagnostics(dirs),
     }
 }
 
@@ -42,6 +45,7 @@ pub(super) fn select(
             unreachable!("Codex integrations use shared reconciliation")
         }
         Integration::OpenCode => opencode::select(dirs, data_dir, state, api_key),
+        Integration::Hermes => hermes::select(dirs, data_dir, state, api_key),
     }
 }
 
@@ -68,5 +72,6 @@ pub(super) fn deselect(
             unreachable!("Codex integrations use shared reconciliation")
         }
         Integration::OpenCode => opencode::deselect(dirs, state),
+        Integration::Hermes => hermes::deselect(dirs, state),
     }
 }

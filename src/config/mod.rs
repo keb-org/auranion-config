@@ -218,6 +218,7 @@ mod tests {
                 "ChatGPT / Codex Desktop",
                 "Codex CLI",
                 "OpenCode",
+                "Hermes",
             ]
         );
     }
@@ -239,10 +240,9 @@ mod tests {
                 ("gpt-5.6-luna", "cx/gpt-5.6-luna"),
                 ("gpt-5.3", "gcli/grok-4.6"),
                 ("gpt-5.3-mini", "cmc/meta/muse-spark-1.2-contributor"),
-                ("gpt-5.3-turbo", "cmc/stealth/ox-alpha"),
+                ("gpt-5.3-turbo", "cmc/z-ai/glm-5.3-flash"),
                 ("gpt-5.4-mini", "cmc/deepseek/deepseek-v4-flash"),
                 ("gpt-5.4", "ag/gemini-3.7-flash-tiered"),
-                ("gpt-5.5", "alibaba/qwen3.8-max"),
                 ("gpt-5.3-large", "nousresearch/hermes-4-405b"),
             ]
         );

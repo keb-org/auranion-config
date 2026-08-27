@@ -127,10 +127,10 @@ pub const MODELS: &[Model] = &[
         forced_effort: None,
     },
     Model {
-        upstream: "cmc/stealth/ox-alpha",
-        label: "Ox Alpha",
+        upstream: "cmc/z-ai/glm-5.3-flash",
+        label: "GLM 5.3 Flash",
         desktop_alias: "claude-opus-4-5-20251101",
-        desktop_label: "Ox Alpha",
+        desktop_label: "GLM 5.3 Flash",
         codex_desktop_alias: "gpt-5.3-turbo",
         codex_desktop_reasoning_efforts: &[],
         score: None,
@@ -181,24 +181,6 @@ pub const MODELS: &[Model] = &[
         forced_effort: Some("high"),
     },
     Model {
-        upstream: "alibaba/qwen3.8-max",
-        label: "Qwen 3.8 Max",
-        desktop_alias: "claude-haiku-4-5",
-        desktop_label: "Qwen 3.8 Max",
-        codex_desktop_alias: "gpt-5.5",
-        codex_desktop_reasoning_efforts: &[],
-        score: Some(57),
-        context: Some(1_000_000),
-        output: Some(65_536),
-        reasoning: true,
-        reasoning_efforts: &[],
-        vision: false,
-        audio: false,
-        video: false,
-        native_claude: false,
-        forced_effort: Some("none"),
-    },
-    Model {
         upstream: "nousresearch/hermes-4-405b",
         label: "Hermes 4 405B",
         desktop_alias: "claude-sonnet-4-6",
@@ -246,7 +228,6 @@ mod tests {
     fn catalog_has_the_expected_models() {
         let upstream: HashSet<_> = MODELS.iter().map(|model| model.upstream).collect();
         let expected = [
-            "alibaba/qwen3.8-max",
             "ag/gemini-3.7-flash-tiered",
             "cx/gpt-5.6-sol",
             "cx/gpt-5.6-terra",
@@ -254,7 +235,7 @@ mod tests {
             "cmc/deepseek/deepseek-v4-flash",
             "cmc/meta/muse-spark-1.2-contributor",
             "gcli/grok-4.6",
-            "cmc/stealth/ox-alpha",
+            "cmc/z-ai/glm-5.3-flash",
             "nousresearch/hermes-4-405b",
         ];
 
@@ -275,10 +256,9 @@ mod tests {
                 "GPT 5.6 Luna",
                 "Grok 4.6",
                 "Muse Spark 1.2",
-                "Ox Alpha",
+                "GLM 5.3 Flash",
                 "DeepSeek V4 Flash",
                 "Gemini 3.7 Flash",
-                "Qwen 3.8 Max",
                 "Hermes 4 405B",
             ]
         );
@@ -298,9 +278,6 @@ mod tests {
 
     #[test]
     fn desktop_routes_preserve_non_anthropic_upstreams() {
-        let qwen = by_desktop_alias("claude-haiku-4-5").unwrap();
-        assert_eq!(qwen.upstream, "alibaba/qwen3.8-max");
-
         let gemini = by_desktop_alias("claude-haiku-4-6").unwrap();
         assert_eq!(gemini.upstream, "ag/gemini-3.7-flash-tiered");
 
@@ -335,7 +312,7 @@ mod tests {
             "cx/gpt-5.6-sol",
             "gcli/grok-4.6",
             "cmc/meta/muse-spark-1.2-contributor",
-            "cmc/stealth/ox-alpha",
+            "cmc/z-ai/glm-5.3-flash",
         ] {
             let model = MODELS
                 .iter()
@@ -356,7 +333,6 @@ mod tests {
             ("cx/gpt-5.6-sol", "claude-opus-4-8"),
             ("cx/gpt-5.6-terra", "claude-sonnet-4-5-20250920"),
             ("cx/gpt-5.6-luna", "claude-sonnet-4-5"),
-            ("alibaba/qwen3.8-max", "claude-haiku-4-5"),
             ("ag/gemini-3.7-flash-tiered", "claude-haiku-4-6"),
             (
                 "cmc/deepseek/deepseek-v4-flash",
@@ -364,7 +340,7 @@ mod tests {
             ),
             ("cmc/meta/muse-spark-1.2-contributor", "claude-opus-4-6"),
             ("gcli/grok-4.6", "claude-opus-4-7"),
-            ("cmc/stealth/ox-alpha", "claude-opus-4-5-20251101"),
+            ("cmc/z-ai/glm-5.3-flash", "claude-opus-4-5-20251101"),
             ("nousresearch/hermes-4-405b", "claude-sonnet-4-6"),
         ];
 
@@ -425,7 +401,6 @@ mod tests {
                 "cx/gpt-5.6-luna",
                 &["none", "minimal", "low", "medium", "high", "xhigh", "max"],
             ),
-            ("alibaba/qwen3.8-max", &[]),
             ("ag/gemini-3.7-flash-tiered", &["low", "medium", "high"]),
             ("cmc/deepseek/deepseek-v4-flash", &["low", "high", "max"]),
             (
@@ -433,7 +408,7 @@ mod tests {
                 &["minimal", "low", "medium", "high", "xhigh"],
             ),
             ("gcli/grok-4.6", &["low", "medium", "high", "xhigh"]),
-            ("cmc/stealth/ox-alpha", &[]),
+            ("cmc/z-ai/glm-5.3-flash", &[]),
             ("nousresearch/hermes-4-405b", &[]),
         ];
 
@@ -456,12 +431,11 @@ mod tests {
             ("gpt-5.6-sol", "cx/gpt-5.6-sol"),
             ("gpt-5.6-terra", "cx/gpt-5.6-terra"),
             ("gpt-5.6-luna", "cx/gpt-5.6-luna"),
-            ("gpt-5.5", "alibaba/qwen3.8-max"),
             ("gpt-5.4", "ag/gemini-3.7-flash-tiered"),
             ("gpt-5.4-mini", "cmc/deepseek/deepseek-v4-flash"),
             ("gpt-5.3-mini", "cmc/meta/muse-spark-1.2-contributor"),
             ("gpt-5.3", "gcli/grok-4.6"),
-            ("gpt-5.3-turbo", "cmc/stealth/ox-alpha"),
+            ("gpt-5.3-turbo", "cmc/z-ai/glm-5.3-flash"),
             ("gpt-5.3-large", "nousresearch/hermes-4-405b"),
         ];
         let aliases: HashSet<_> = MODELS
@@ -490,7 +464,6 @@ mod tests {
                 &["low", "medium", "high", "xhigh", "max", "ultra"],
             ),
             ("gpt-5.6-luna", &["low", "medium", "high", "xhigh", "max"]),
-            ("gpt-5.5", &[]),
             ("gpt-5.4", &["low", "medium", "high"]),
             ("gpt-5.4-mini", &["low", "high", "max"]),
             (

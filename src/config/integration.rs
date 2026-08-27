@@ -11,15 +11,17 @@ pub(super) enum Integration {
     #[serde(rename = "Codex CLI", alias = "Codex")]
     CodexCli,
     OpenCode,
+    Hermes,
 }
 
 impl Integration {
-    pub(super) const ALL: [Self; 5] = [
+    pub(super) const ALL: [Self; 6] = [
         Self::ClaudeDesktop,
         Self::ClaudeCode,
         Self::CodexDesktop,
         Self::CodexCli,
         Self::OpenCode,
+        Self::Hermes,
     ];
 
     pub(super) const fn is_codex(self) -> bool {
@@ -33,6 +35,7 @@ impl Integration {
             Self::CodexDesktop => "ChatGPT / Codex Desktop",
             Self::CodexCli => "Codex CLI",
             Self::OpenCode => "OpenCode",
+            Self::Hermes => "Hermes",
         }
     }
 }
