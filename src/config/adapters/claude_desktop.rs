@@ -253,7 +253,7 @@ fn merge(path: &Path, api_key: &str) -> Result<()> {
                     json!({
                         "name": model.desktop_alias,
                         "labelOverride": model.desktop_label,
-                        "supports1m": model.context.is_some_and(|context| context >= 1_000_000),
+                        "supports1m": false,
                     })
                 })
                 .collect(),
