@@ -13,7 +13,7 @@ Claude Desktop routes by Anthropic alias. Any `claude-*` slug is accepted; only 
 | `claude-sonnet-4-5-20250920` | `cx/gpt-5.6-terra` | No — forced `max` |
 | `claude-sonnet-4-5` | `cx/gpt-5.6-luna` | No — forced `max` |
 | `claude-haiku-4-5-20251001` | `cmc/deepseek/deepseek-v4-flash` | No — forced `max` |
-| `claude-haiku-4-6` | `ag/gemini-3.7-flash-tiered` | No — forced `high` |
+| `claude-haiku-4-6` | `ag/gemini-3.8-flash-tiered` | No — forced `high` |
 
 Source: `src/catalog.rs` `MODELS[].desktop_alias`. Effort-capable set is `{ claude-opus-4-8, claude-opus-4-7, claude-opus-4-6, claude-opus-4-5-20251101 }` — only these render the picker. All other routes carry `forced_effort` in `src/catalog.rs`.
 
@@ -45,7 +45,7 @@ The catalog `supported_reasoning_levels` is filtered through `CODEX_REASONING_EF
 | `gpt-5.6-terra` | `cx/gpt-5.6-terra` | low / medium / high / xhigh |
 | `gpt-5.6-luna` | `cx/gpt-5.6-luna` | low / medium / high / xhigh |
 | `gpt-5.4-mini` | `cmc/deepseek/deepseek-v4-flash` | low / high |
-| `gpt-5.4` | `ag/gemini-3.7-flash-tiered` | low / medium / high |
+| `gpt-5.4` | `ag/gemini-3.8-flash-tiered` | low / medium / high |
 | `gpt-5.3` *(aliased — see note above)* | `gcli/grok-4.6` | low / medium / high / xhigh |
 | `gpt-5.3-mini` *(aliased)* | `cmc/meta/muse-spark-1.3-contributor` | shortest / low / medium / high / xhigh |
 | `gpt-5.3-turbo` *(aliased)* | `cmc/z-ai/glm-5.3-flash` | *(none)* |

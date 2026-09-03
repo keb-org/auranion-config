@@ -20,14 +20,14 @@ This document records the durable state, decisions, and verified facts for the `
 5. `cmc/meta/muse-spark-1.3-contributor` — Muse Spark 1.3 — context 1M, output 128k, vision/audio/video
 6. `cmc/z-ai/glm-5.3-flash` — GLM 5.3 Flash — context 1M, output 131k, vision/video
 7. `cmc/deepseek/deepseek-v4-flash` — DeepSeek V4 Flash — context 1M, output 384k, no vision
-8. `ag/gemini-3.7-flash-tiered` — Gemini 3.7 Flash — context 1M, output 64k, vision/audio/video
+8. `ag/gemini-3.8-flash-tiered` — Gemini 3.8 Flash — context 1M, output 64k, vision/audio/video
 
 Retired (must never reappear in profiles): Poolside Laguna S 2.1, Poolside Laguna XS 2.1, GLM 5.2, DeepSeek V4 Pro, Qwen 3.7 Plus, Qwen 3.6 Flash, Qwen 3.8 Max, Hermes 4 405B.
 
 ## Reasoning-effort contracts (API-verified via 9router invalid-value probes; DeepSeek Pro from api-docs.deepseek.com/thinking_mode + Firecrawl)
 
 - GPT-5.6 Sol / Terra / Luna: `none, minimal, low, medium, high, xhigh, max`
-- Gemini 3.7 Flash: `low, medium, high`
+- Gemini 3.8 Flash: `low, medium, high`
 - GLM 5.3 Flash: no effort control
 - DeepSeek V4 Flash: `low, high, max` (thinking on by default at `high`; no off-toggle)
 - Muse Spark 1.3: `shortest, low, medium, high, xhigh, max` (`none` returns HTTP 400; `max` rolled out for 1.3 per ai.developer.meta.com/docs/features/reasoning)
@@ -58,7 +58,7 @@ Claude Desktop picker routes (verified effort mapping):
 - Muse Spark 1.3 → `claude-opus-4-6`
 - GLM 5.3 Flash → `claude-opus-4-5-20251101`
 - DeepSeek V4 Flash → `claude-haiku-4-5-20251001`
-- Gemini 3.7 Flash → `claude-haiku-4-6`
+- Gemini 3.8 Flash → `claude-haiku-4-6`
 
 Effort-capable desktop aliases (render Effort control): opus 4.8/4.7/4.6/4.5-20251101. Active: Sol (opus-4-8), Grok 4.6 (opus-4-7, ultra→xhigh), Muse Spark 1.3 (opus-4-6, ultra→xhigh), GLM 5.3 Flash (opus-4-5-20251101). `claude-sonnet-4-6` spare. Non-effort routes carry `forced_effort`: Terra max, Luna max, DeepSeek max, Gemini high.
 

@@ -7,7 +7,7 @@
 | `claude-opus-4-6` | `cmc/meta/muse-spark-1.3-contributor` |
 | `claude-opus-4-5-20251101` | `cmc/z-ai/glm-5.3-flash` |
 | `claude-haiku-4-5-20251001` | `cmc/deepseek/deepseek-v4-flash` |
-| `claude-haiku-4-6` | `ag/gemini-3.7-flash-tiered` |
+| `claude-haiku-4-6` | `ag/gemini-3.8-flash-tiered` |
 | `gpt-5.6-sol` | `cx/gpt-5.6-sol` |
 | `gpt-5.6-terra` | `cx/gpt-5.6-terra` |
 | `gpt-5.6-luna` | `cx/gpt-5.6-luna` |
@@ -15,4 +15,4 @@
 | `gpt-5.3-mini` | `cmc/meta/muse-spark-1.3-contributor` |
 | `gpt-5.3-turbo` | `cmc/z-ai/glm-5.3-flash` |
 | `gpt-5.4-mini` | `cmc/deepseek/deepseek-v4-flash` |
-| `gpt-5.4` | `ag/gemini-3.7-flash-tiered` |
+| `gpt-5.4` | `ag/gemini-3.8-flash-tiered` |
