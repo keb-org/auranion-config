@@ -2,20 +2,20 @@
 
 ## Claude Desktop — accepted `desktop_alias` values
 
-Claude Desktop routes by Anthropic alias. Any `claude-*` slug is accepted; only the four below render an **Effort** control in the Model Picker.
+Claude Desktop routes by Anthropic alias. Any `claude-*` slug is accepted; Claude 5 slots (`claude-fable-5`, `claude-sonnet-5`) and Claude 4 effort-capable slots render reasoning/effort controls in the Model Picker.
 
 | Slug (`desktop_alias`) | Route → upstream | Effort control |
 | --- | --- | --- |
 | `claude-opus-4-8` | `cx/gpt-5.6-sol` | Yes — user picks effort |
-| `claude-opus-4-7` | `gcli/grok-4.6` | Yes (ultra→xhigh) |
-| `claude-opus-4-6` | `cmc/meta/muse-spark-1.3-contributor` | Yes (ultra→xhigh) |
-| `claude-opus-4-5-20251101` | `cmc/z-ai/glm-5.3-flash` | Yes |
-| `claude-sonnet-4-5-20250920` | `cx/gpt-5.6-terra` | No — forced `max` |
-| `claude-sonnet-4-5` | `cx/gpt-5.6-luna` | No — forced `max` |
+| `claude-opus-4-7` | `cx/gpt-5.6-terra` | Yes — user picks effort |
+| `claude-sonnet-4-6` | `cx/gpt-5.6-luna` | Yes — user picks effort |
+| `claude-opus-4-5-20251101` | `gcli/grok-4.6` | Yes (ultra→xhigh) |
+| `claude-fable-5` | `cmc/meta/muse-spark-1.3-contributor` | Yes (adaptive / ultra→xhigh) |
+| `claude-opus-4-6` | `cmc/z-ai/glm-5.3-flash` | Yes — user picks effort |
 | `claude-haiku-4-5-20251001` | `cmc/deepseek/deepseek-v4-flash` | No — forced `max` |
-| `claude-haiku-4-6` | `ag/gemini-3.8-flash-tiered` | No — forced `high` |
+| `claude-sonnet-5` | `ag/gemini-3.8-flash-tiered` | Yes (adaptive / low-high) |
 
-Source: `src/catalog.rs` `MODELS[].desktop_alias`. Effort-capable set is `{ claude-opus-4-8, claude-opus-4-7, claude-opus-4-6, claude-opus-4-5-20251101 }` — only these render the picker. All other routes carry `forced_effort` in `src/catalog.rs`.
+Source: `src/catalog.rs` `MODELS[].desktop_alias`. Effort-capable set is `{ claude-fable-5, claude-sonnet-5, claude-opus-4-8, claude-opus-4-7, claude-opus-4-6, claude-opus-4-5-20251101, claude-sonnet-4-6 }`. DeepSeek routes on `claude-haiku-4-5-20251001` with `forced_effort: Some("max")`.
 
 ## ChatGPT / Codex Desktop — accepted `codex_desktop_alias` values
 

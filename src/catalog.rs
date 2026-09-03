@@ -57,7 +57,7 @@ pub const MODELS: &[Model] = &[
     Model {
         upstream: "cx/gpt-5.6-terra",
         label: "GPT 5.6 Terra",
-        desktop_alias: "claude-sonnet-4-5-20250920",
+        desktop_alias: "claude-opus-4-7",
         desktop_label: "GPT 5.6 Terra",
         codex_desktop_alias: "gpt-5.6-terra",
         codex_desktop_reasoning_efforts: &["low", "medium", "high", "xhigh", "max", "ultra"],
@@ -70,12 +70,12 @@ pub const MODELS: &[Model] = &[
         audio: false,
         video: false,
         native_claude: false,
-        forced_effort: Some("max"),
+        forced_effort: None,
     },
     Model {
         upstream: "cx/gpt-5.6-luna",
         label: "GPT 5.6 Luna",
-        desktop_alias: "claude-sonnet-4-5",
+        desktop_alias: "claude-sonnet-4-6",
         desktop_label: "GPT 5.6 Luna",
         codex_desktop_alias: "gpt-5.6-luna",
         codex_desktop_reasoning_efforts: &["low", "medium", "high", "xhigh", "max"],
@@ -88,12 +88,12 @@ pub const MODELS: &[Model] = &[
         audio: false,
         video: false,
         native_claude: false,
-        forced_effort: Some("max"),
+        forced_effort: None,
     },
     Model {
         upstream: "gcli/grok-4.6",
         label: "Grok 4.6",
-        desktop_alias: "claude-opus-4-7",
+        desktop_alias: "claude-opus-4-5-20251101",
         desktop_label: "Grok 4.6",
         codex_desktop_alias: "gpt-5.3",
         codex_desktop_reasoning_efforts: &["low", "medium", "high", "xhigh", "ultra"],
@@ -111,7 +111,7 @@ pub const MODELS: &[Model] = &[
     Model {
         upstream: "cmc/meta/muse-spark-1.3-contributor",
         label: "Muse Spark 1.3",
-        desktop_alias: "claude-opus-4-6",
+        desktop_alias: "claude-fable-5",
         desktop_label: "Muse Spark 1.3",
         codex_desktop_alias: "gpt-5.3-mini",
         codex_desktop_reasoning_efforts: &["shortest", "low", "medium", "high", "xhigh", "ultra"],
@@ -129,15 +129,15 @@ pub const MODELS: &[Model] = &[
     Model {
         upstream: "cmc/z-ai/glm-5.3-flash",
         label: "GLM 5.3 Flash",
-        desktop_alias: "claude-opus-4-5-20251101",
+        desktop_alias: "claude-opus-4-6",
         desktop_label: "GLM 5.3 Flash",
         codex_desktop_alias: "gpt-5.3-turbo",
-        codex_desktop_reasoning_efforts: &[],
+        codex_desktop_reasoning_efforts: &["low", "high"],
         score: None,
         context: Some(1_048_576),
         output: Some(131_072),
         reasoning: true,
-        reasoning_efforts: &[],
+        reasoning_efforts: &["low", "high", "max"],
         vision: true,
         audio: false,
         video: true,
@@ -165,7 +165,7 @@ pub const MODELS: &[Model] = &[
     Model {
         upstream: "ag/gemini-3.8-flash-tiered",
         label: "Gemini 3.8 Flash",
-        desktop_alias: "claude-haiku-4-6",
+        desktop_alias: "claude-sonnet-5",
         desktop_label: "Gemini 3.8 Flash",
         codex_desktop_alias: "gpt-5.4",
         codex_desktop_reasoning_efforts: &["low", "medium", "high"],
@@ -178,7 +178,7 @@ pub const MODELS: &[Model] = &[
         audio: true,
         video: true,
         native_claude: false,
-        forced_effort: Some("high"),
+        forced_effort: None,
     },
 ];
 
@@ -250,7 +250,6 @@ mod tests {
         assert_eq!(aliases.len(), MODELS.len());
         for model in MODELS {
             assert!(model.desktop_alias.starts_with("claude-"));
-            assert!(!model.desktop_alias.contains("claude-5"));
             assert_eq!(by_desktop_alias(model.desktop_alias), Some(model));
             assert_eq!(model.desktop_label, model.label);
         }
@@ -258,7 +257,7 @@ mod tests {
 
     #[test]
     fn desktop_routes_preserve_non_anthropic_upstreams() {
-        let gemini = by_desktop_alias("claude-haiku-4-6").unwrap();
+        let gemini = by_desktop_alias("claude-sonnet-5").unwrap();
         assert_eq!(gemini.upstream, "ag/gemini-3.8-flash-tiered");
 
         let sol = by_desktop_alias("claude-opus-4-8").unwrap();
@@ -267,20 +266,22 @@ mod tests {
         let deepseek = by_desktop_alias("claude-haiku-4-5-20251001").unwrap();
         assert_eq!(deepseek.upstream, "cmc/deepseek/deepseek-v4-flash");
 
-        let muse = by_desktop_alias("claude-opus-4-6").unwrap();
+        let muse = by_desktop_alias("claude-fable-5").unwrap();
         assert_eq!(muse.upstream, "cmc/meta/muse-spark-1.3-contributor");
 
-        let grok = by_desktop_alias("claude-opus-4-7").unwrap();
+        let grok = by_desktop_alias("claude-opus-4-5-20251101").unwrap();
         assert_eq!(grok.upstream, "gcli/grok-4.6");
     }
 
     /// Claude Desktop derives the Effort control from the route model ID.
-    /// Per platform.claude.com/docs/en/build-with-claude/effort, effort is
-    /// supported on Opus 4.5/4.6/4.7/4.8 and Sonnet 4.6 (pre-Claude-5 set).
+    /// Effort is supported on Claude 5 native slots (fable-5, sonnet-5) and
+    /// Claude 4 effort-capable slots (Opus 4.5/4.6/4.7/4.8, Sonnet 4.6).
     /// Routes for reasoning models must use one of these or Effort disappears.
     #[test]
     fn reasoning_routes_use_effort_capable_ids() {
-        const EFFORT_CAPABLE: [&str; 5] = [
+        const EFFORT_CAPABLE: [&str; 7] = [
+            "claude-fable-5",
+            "claude-sonnet-5",
             "claude-opus-4-5-20251101",
             "claude-opus-4-6",
             "claude-opus-4-7",
@@ -290,9 +291,12 @@ mod tests {
 
         for upstream in [
             "cx/gpt-5.6-sol",
+            "cx/gpt-5.6-terra",
+            "cx/gpt-5.6-luna",
             "gcli/grok-4.6",
             "cmc/meta/muse-spark-1.3-contributor",
             "cmc/z-ai/glm-5.3-flash",
+            "ag/gemini-3.8-flash-tiered",
         ] {
             let model = MODELS
                 .iter()
@@ -311,16 +315,16 @@ mod tests {
     fn claude_desktop_picker_routes_keep_verified_effort_mapping() {
         let expected = [
             ("cx/gpt-5.6-sol", "claude-opus-4-8"),
-            ("cx/gpt-5.6-terra", "claude-sonnet-4-5-20250920"),
-            ("cx/gpt-5.6-luna", "claude-sonnet-4-5"),
-            ("ag/gemini-3.8-flash-tiered", "claude-haiku-4-6"),
+            ("cx/gpt-5.6-terra", "claude-opus-4-7"),
+            ("cx/gpt-5.6-luna", "claude-sonnet-4-6"),
+            ("ag/gemini-3.8-flash-tiered", "claude-sonnet-5"),
             (
                 "cmc/deepseek/deepseek-v4-flash",
                 "claude-haiku-4-5-20251001",
             ),
-            ("cmc/meta/muse-spark-1.3-contributor", "claude-opus-4-6"),
-            ("gcli/grok-4.6", "claude-opus-4-7"),
-            ("cmc/z-ai/glm-5.3-flash", "claude-opus-4-5-20251101"),
+            ("cmc/meta/muse-spark-1.3-contributor", "claude-fable-5"),
+            ("gcli/grok-4.6", "claude-opus-4-5-20251101"),
+            ("cmc/z-ai/glm-5.3-flash", "claude-opus-4-6"),
         ];
 
         for (upstream, desktop_alias) in expected {
@@ -332,12 +336,15 @@ mod tests {
         }
     }
 
-    /// Routes parked on non-effort-capable IDs cannot show an Effort control,
-    /// so the proxy forces their effort instead. Every such route must declare
-    /// one, and effort-capable routes must not (the user picks in the UI).
+    /// Routes parked on non-effort-capable IDs cannot show an Effort control.
+    /// If the upstream model supports reasoning effort, the proxy must force it.
+    /// Models with UI effort controls or models without reasoning effort support
+    /// have forced_effort = None.
     #[test]
     fn non_effort_routes_declare_forced_effort() {
-        const EFFORT_CAPABLE: [&str; 5] = [
+        const EFFORT_CAPABLE: [&str; 7] = [
+            "claude-fable-5",
+            "claude-sonnet-5",
             "claude-opus-4-8",
             "claude-opus-4-7",
             "claude-opus-4-6",
@@ -347,15 +354,21 @@ mod tests {
 
         for model in MODELS {
             let ui_effort = EFFORT_CAPABLE.contains(&model.desktop_alias);
-            assert_eq!(
-                model.forced_effort.is_none(),
-                ui_effort,
-                "{} routes to {} (ui_effort={}) but forced_effort={:?}",
-                model.label,
-                model.desktop_alias,
-                ui_effort,
-                model.forced_effort
-            );
+            if ui_effort || model.reasoning_efforts.is_empty() {
+                assert!(
+                    model.forced_effort.is_none(),
+                    "{} has forced_effort={:?} but expected None",
+                    model.label,
+                    model.forced_effort
+                );
+            } else {
+                assert!(
+                    model.forced_effort.is_some(),
+                    "{} requires forced_effort on non-effort slot {}",
+                    model.label,
+                    model.desktop_alias
+                );
+            }
         }
 
         let model = MODELS
@@ -387,7 +400,7 @@ mod tests {
                 &["shortest", "low", "medium", "high", "xhigh", "max"],
             ),
             ("gcli/grok-4.6", &["low", "medium", "high", "xhigh"]),
-            ("cmc/z-ai/glm-5.3-flash", &[]),
+            ("cmc/z-ai/glm-5.3-flash", &["low", "high", "max"]),
         ];
 
         for (upstream, efforts) in expected {
@@ -448,7 +461,7 @@ mod tests {
                 &["shortest", "low", "medium", "high", "xhigh", "ultra"],
             ),
             ("gpt-5.3", &["low", "medium", "high", "xhigh", "ultra"]),
-            ("gpt-5.3-turbo", &[]),
+            ("gpt-5.3-turbo", &["low", "high"]),
         ];
 
         for (alias, efforts) in expected {

@@ -309,7 +309,8 @@ mod tests {
         let models = root["provider"]["auranion"]["models"].as_object().unwrap();
         assert_eq!(models.len(), MODELS.len());
         let glm = &models["cmc/z-ai/glm-5.3-flash"];
-        assert!(glm.get("variants").is_none(), "glm should have no variants");
+        let glm_variants = glm.get("variants").and_then(|v| v.as_object()).unwrap();
+        assert!(glm_variants.contains_key("low") && glm_variants.contains_key("max"));
         // DeepSeek has low/high/max only
         let ds = &models["cmc/deepseek/deepseek-v4-flash"];
         let variants = ds.get("variants").and_then(|v| v.as_object()).unwrap();

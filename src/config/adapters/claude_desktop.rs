@@ -371,7 +371,7 @@ mod tests {
         );
         assert_eq!(
             models[5].get("name").and_then(Value::as_str),
-            Some("claude-opus-4-5-20251101")
+            Some("claude-opus-4-6")
         );
         assert_eq!(
             models[6].get("name").and_then(Value::as_str),
@@ -763,7 +763,8 @@ mod tests {
             "claude-opus-4-7",
             "claude-opus-4-6",
             "claude-haiku-4-5-20251001",
-            "claude-haiku-4-6",
+            "claude-sonnet-5",
+            "claude-fable-5",
         ] {
             assert!(
                 names.contains(&expected),

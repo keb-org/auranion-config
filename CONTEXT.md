@@ -28,7 +28,7 @@ Retired (must never reappear in profiles): Poolside Laguna S 2.1, Poolside Lagun
 
 - GPT-5.6 Sol / Terra / Luna: `none, minimal, low, medium, high, xhigh, max`
 - Gemini 3.8 Flash: `low, medium, high`
-- GLM 5.3 Flash: no effort control
+- GLM 5.3 Flash: `low, high, max` (defaults to `max`)
 - DeepSeek V4 Flash: `low, high, max` (thinking on by default at `high`; no off-toggle)
 - Muse Spark 1.3: `shortest, low, medium, high, xhigh, max` (`none` returns HTTP 400; `max` rolled out for 1.3 per ai.developer.meta.com/docs/features/reasoning)
 - Grok 4.6: `low, medium, high, xhigh` (default `high`, cannot disable; from docs.x.ai)
@@ -52,15 +52,15 @@ Removes obsolete `anthropicBaseUrl` / `anthropicApiKey`. No local proxy, supervi
 
 Claude Desktop picker routes (verified effort mapping):
 - GPT 5.6 Sol → `claude-opus-4-8`
-- GPT 5.6 Terra → `claude-sonnet-4-5-20250920`
-- GPT 5.6 Luna → `claude-sonnet-4-5`
-- Grok 4.6 → `claude-opus-4-7`
-- Muse Spark 1.3 → `claude-opus-4-6`
-- GLM 5.3 Flash → `claude-opus-4-5-20251101`
+- GPT 5.6 Terra → `claude-opus-4-7`
+- GPT 5.6 Luna → `claude-sonnet-4-6`
+- Grok 4.6 → `claude-opus-4-5-20251101`
+- Muse Spark 1.3 → `claude-fable-5`
+- GLM 5.3 Flash → `claude-opus-4-6`
 - DeepSeek V4 Flash → `claude-haiku-4-5-20251001`
-- Gemini 3.8 Flash → `claude-haiku-4-6`
+- Gemini 3.8 Flash → `claude-sonnet-5`
 
-Effort-capable desktop aliases (render Effort control): opus 4.8/4.7/4.6/4.5-20251101. Active: Sol (opus-4-8), Grok 4.6 (opus-4-7, ultra→xhigh), Muse Spark 1.3 (opus-4-6, ultra→xhigh), GLM 5.3 Flash (opus-4-5-20251101). `claude-sonnet-4-6` spare. Non-effort routes carry `forced_effort`: Terra max, Luna max, DeepSeek max, Gemini high.
+Effort-capable desktop aliases (render Effort control): Claude 5 slots (`claude-fable-5`, `claude-sonnet-5`) and Claude 4 effort-capable slots (`claude-opus-4-8`, `claude-opus-4-7`, `claude-opus-4-6`, `claude-opus-4-5-20251101`, `claude-sonnet-4-6`). Active: Sol (opus-4-8), Terra (opus-4-7), Luna (sonnet-4-6), Grok 4.6 (opus-4-5-20251101), Muse Spark 1.3 (fable-5), GLM 5.3 Flash (opus-4-6), Gemini 3.8 Flash (sonnet-5). DeepSeek routes on `claude-haiku-4-5-20251001` with `forced_effort: Some("max")`.
 
 Verified end-to-end: `claude-opus-4-8` returns upstream `gpt-5.6-sol`; `claude-sonnet-4-6` streams SSE HTTP 200.
 
