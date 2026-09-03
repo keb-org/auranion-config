@@ -598,6 +598,7 @@ fn reasoning_preset(effort: &str) -> Value {
     let description = match effort {
         "none" => "No extra reasoning effort",
         "minimal" => "Minimal reasoning effort",
+        "shortest" => "The shortest reasoning pass",
         "low" => "Fast responses with lighter reasoning",
         "medium" => "Balances speed and reasoning depth for everyday tasks",
         "high" => "Greater reasoning depth for complex problems",

@@ -109,17 +109,17 @@ pub const MODELS: &[Model] = &[
         forced_effort: None,
     },
     Model {
-        upstream: "cmc/meta/muse-spark-1.2-contributor",
-        label: "Muse Spark 1.2",
+        upstream: "cmc/meta/muse-spark-1.3-contributor",
+        label: "Muse Spark 1.3",
         desktop_alias: "claude-opus-4-6",
-        desktop_label: "Muse Spark 1.2",
+        desktop_label: "Muse Spark 1.3",
         codex_desktop_alias: "gpt-5.3-mini",
-        codex_desktop_reasoning_efforts: &["minimal", "low", "medium", "high", "xhigh", "ultra"],
+        codex_desktop_reasoning_efforts: &["shortest", "low", "medium", "high", "xhigh", "ultra"],
         score: None,
         context: Some(1_048_576),
         output: Some(128_000),
         reasoning: true,
-        reasoning_efforts: &["minimal", "low", "medium", "high", "xhigh"],
+        reasoning_efforts: &["shortest", "low", "medium", "high", "xhigh", "max"],
         vision: true,
         audio: true,
         video: true,
@@ -215,7 +215,7 @@ mod tests {
             "cx/gpt-5.6-terra",
             "cx/gpt-5.6-luna",
             "cmc/deepseek/deepseek-v4-flash",
-            "cmc/meta/muse-spark-1.2-contributor",
+            "cmc/meta/muse-spark-1.3-contributor",
             "gcli/grok-4.6",
             "cmc/z-ai/glm-5.3-flash",
         ];
@@ -236,7 +236,7 @@ mod tests {
                 "GPT 5.6 Terra",
                 "GPT 5.6 Luna",
                 "Grok 4.6",
-                "Muse Spark 1.2",
+                "Muse Spark 1.3",
                 "GLM 5.3 Flash",
                 "DeepSeek V4 Flash",
                 "Gemini 3.7 Flash",
@@ -268,7 +268,7 @@ mod tests {
         assert_eq!(deepseek.upstream, "cmc/deepseek/deepseek-v4-flash");
 
         let muse = by_desktop_alias("claude-opus-4-6").unwrap();
-        assert_eq!(muse.upstream, "cmc/meta/muse-spark-1.2-contributor");
+        assert_eq!(muse.upstream, "cmc/meta/muse-spark-1.3-contributor");
 
         let grok = by_desktop_alias("claude-opus-4-7").unwrap();
         assert_eq!(grok.upstream, "gcli/grok-4.6");
@@ -291,7 +291,7 @@ mod tests {
         for upstream in [
             "cx/gpt-5.6-sol",
             "gcli/grok-4.6",
-            "cmc/meta/muse-spark-1.2-contributor",
+            "cmc/meta/muse-spark-1.3-contributor",
             "cmc/z-ai/glm-5.3-flash",
         ] {
             let model = MODELS
@@ -318,7 +318,7 @@ mod tests {
                 "cmc/deepseek/deepseek-v4-flash",
                 "claude-haiku-4-5-20251001",
             ),
-            ("cmc/meta/muse-spark-1.2-contributor", "claude-opus-4-6"),
+            ("cmc/meta/muse-spark-1.3-contributor", "claude-opus-4-6"),
             ("gcli/grok-4.6", "claude-opus-4-7"),
             ("cmc/z-ai/glm-5.3-flash", "claude-opus-4-5-20251101"),
         ];
@@ -383,8 +383,8 @@ mod tests {
             ("ag/gemini-3.7-flash-tiered", &["low", "medium", "high"]),
             ("cmc/deepseek/deepseek-v4-flash", &["low", "high", "max"]),
             (
-                "cmc/meta/muse-spark-1.2-contributor",
-                &["minimal", "low", "medium", "high", "xhigh"],
+                "cmc/meta/muse-spark-1.3-contributor",
+                &["shortest", "low", "medium", "high", "xhigh", "max"],
             ),
             ("gcli/grok-4.6", &["low", "medium", "high", "xhigh"]),
             ("cmc/z-ai/glm-5.3-flash", &[]),
@@ -411,7 +411,7 @@ mod tests {
             ("gpt-5.6-luna", "cx/gpt-5.6-luna"),
             ("gpt-5.4", "ag/gemini-3.7-flash-tiered"),
             ("gpt-5.4-mini", "cmc/deepseek/deepseek-v4-flash"),
-            ("gpt-5.3-mini", "cmc/meta/muse-spark-1.2-contributor"),
+            ("gpt-5.3-mini", "cmc/meta/muse-spark-1.3-contributor"),
             ("gpt-5.3", "gcli/grok-4.6"),
             ("gpt-5.3-turbo", "cmc/z-ai/glm-5.3-flash"),
         ];
@@ -445,7 +445,7 @@ mod tests {
             ("gpt-5.4-mini", &["low", "high", "max"]),
             (
                 "gpt-5.3-mini",
-                &["minimal", "low", "medium", "high", "xhigh", "ultra"],
+                &["shortest", "low", "medium", "high", "xhigh", "ultra"],
             ),
             ("gpt-5.3", &["low", "medium", "high", "xhigh", "ultra"]),
             ("gpt-5.3-turbo", &[]),
