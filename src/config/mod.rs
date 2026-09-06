@@ -14,7 +14,7 @@ use self::{integration::Integration, state::State};
 pub(super) const BASE_URL: &str = "https://agent.auranion.com/v1";
 
 pub(super) fn codex_desktop_routes() -> impl Iterator<Item = (&'static str, &'static str)> {
-    crate::catalog::MODELS
+    crate::catalog::CODEX_MODELS
         .iter()
         .map(|model| (model.codex_desktop_alias, model.upstream))
 }

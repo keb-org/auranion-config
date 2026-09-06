@@ -29,13 +29,180 @@ pub struct Model {
     pub forced_effort: Option<&'static str>,
 }
 
-pub const DEFAULT_MODEL: &str = "cx/gpt-5.6-sol";
-pub const FABLE_MODEL: &str = "cx/gpt-5.6-sol";
-pub const OPUS_MODEL: &str = "cx/gpt-5.6-terra";
+pub const DEFAULT_MODEL: &str = "cx/gpt-6-astra";
+pub const FABLE_MODEL: &str = "cx/gpt-6-astra";
+pub const OPUS_MODEL: &str = "bee/claude-opus-5";
 pub const SONNET_MODEL: &str = "cx/gpt-5.6-luna";
 pub const HAIKU_MODEL: &str = "ag/gemini-3.8-flash-tiered";
 
+pub const CODEX_DEFAULT_MODEL: &str = "cx/gpt-5.6-sol";
+
 pub const MODELS: &[Model] = &[
+    Model {
+        upstream: "cx/gpt-6-astra",
+        label: "GPT 6 Astra",
+        desktop_alias: "claude-opus-4-8",
+        desktop_label: "GPT 6 Astra",
+        codex_desktop_alias: "gpt-6-astra",
+        codex_desktop_reasoning_efforts: &["low", "medium", "high", "xhigh", "max", "ultra"],
+        score: None,
+        context: Some(1_000_000),
+        output: Some(128_000),
+        reasoning: true,
+        reasoning_efforts: &["none", "minimal", "low", "medium", "high", "xhigh", "max"],
+        vision: true,
+        audio: false,
+        video: false,
+        native_claude: false,
+        forced_effort: None,
+    },
+    Model {
+        upstream: "bee/claude-opus-5",
+        label: "Claude Opus 5",
+        desktop_alias: "claude-opus-5",
+        desktop_label: "Claude Opus 5",
+        codex_desktop_alias: "claude-opus-5",
+        codex_desktop_reasoning_efforts: &[],
+        score: None,
+        context: Some(1_000_000),
+        output: Some(128_000),
+        reasoning: true,
+        reasoning_efforts: &["low", "medium", "high", "max"],
+        vision: true,
+        audio: false,
+        video: false,
+        native_claude: true,
+        forced_effort: None,
+    },
+    Model {
+        upstream: "cx/gpt-5.6-terra",
+        label: "GPT 5.6 Terra",
+        desktop_alias: "claude-opus-4-7",
+        desktop_label: "GPT 5.6 Terra",
+        codex_desktop_alias: "gpt-5.6-terra",
+        codex_desktop_reasoning_efforts: &["low", "medium", "high", "xhigh", "max", "ultra"],
+        score: Some(56),
+        context: Some(272_000),
+        output: Some(128_000),
+        reasoning: true,
+        reasoning_efforts: &["none", "minimal", "low", "medium", "high", "xhigh", "max"],
+        vision: true,
+        audio: false,
+        video: false,
+        native_claude: false,
+        forced_effort: None,
+    },
+    Model {
+        upstream: "cx/gpt-5.6-luna",
+        label: "GPT 5.6 Luna",
+        desktop_alias: "claude-sonnet-4-6",
+        desktop_label: "GPT 5.6 Luna",
+        codex_desktop_alias: "gpt-5.6-luna",
+        codex_desktop_reasoning_efforts: &["low", "medium", "high", "xhigh", "max"],
+        score: Some(51),
+        context: Some(272_000),
+        output: Some(128_000),
+        reasoning: true,
+        reasoning_efforts: &["none", "minimal", "low", "medium", "high", "xhigh", "max"],
+        vision: true,
+        audio: false,
+        video: false,
+        native_claude: false,
+        forced_effort: None,
+    },
+    Model {
+        upstream: "gcli/grok-4.6",
+        label: "Grok 4.6",
+        desktop_alias: "claude-opus-4-5-20251101",
+        desktop_label: "Grok 4.6",
+        codex_desktop_alias: "gpt-5.3",
+        codex_desktop_reasoning_efforts: &["low", "medium", "high", "xhigh", "ultra"],
+        score: None,
+        context: Some(500_000),
+        output: Some(128_000),
+        reasoning: true,
+        reasoning_efforts: &["low", "medium", "high", "xhigh"],
+        vision: true,
+        audio: false,
+        video: false,
+        native_claude: false,
+        forced_effort: None,
+    },
+    Model {
+        upstream: "cmc/meta/muse-spark-1.3-contributor",
+        label: "Muse Spark 1.3",
+        desktop_alias: "claude-fable-5",
+        desktop_label: "Muse Spark 1.3",
+        codex_desktop_alias: "gpt-5.3-mini",
+        codex_desktop_reasoning_efforts: &["shortest", "low", "medium", "high", "xhigh", "ultra"],
+        score: None,
+        context: Some(1_048_576),
+        output: Some(128_000),
+        reasoning: true,
+        reasoning_efforts: &["shortest", "low", "medium", "high", "xhigh", "max"],
+        vision: true,
+        audio: true,
+        video: true,
+        native_claude: false,
+        forced_effort: None,
+    },
+    Model {
+        upstream: "cmc/z-ai/glm-5.3-flash",
+        label: "GLM 5.3 Flash",
+        desktop_alias: "claude-opus-4-6",
+        desktop_label: "GLM 5.3 Flash",
+        codex_desktop_alias: "gpt-5.3-turbo",
+        codex_desktop_reasoning_efforts: &["low", "high"],
+        score: None,
+        context: Some(1_048_576),
+        output: Some(131_072),
+        reasoning: true,
+        reasoning_efforts: &["low", "high", "max"],
+        vision: true,
+        audio: false,
+        video: true,
+        native_claude: false,
+        forced_effort: None,
+    },
+    Model {
+        upstream: "cmc/deepseek/deepseek-v4-flash",
+        label: "DeepSeek V4 Flash",
+        desktop_alias: "claude-haiku-4-5-20251001",
+        desktop_label: "DeepSeek V4 Flash",
+        codex_desktop_alias: "gpt-5.4-mini",
+        codex_desktop_reasoning_efforts: &["low", "high", "max"],
+        score: Some(50),
+        context: Some(1_000_000),
+        output: Some(384_000),
+        reasoning: true,
+        reasoning_efforts: &["low", "high", "max"],
+        vision: false,
+        audio: false,
+        video: false,
+        native_claude: false,
+        forced_effort: Some("max"),
+    },
+    Model {
+        upstream: "ag/gemini-3.8-flash-tiered",
+        label: "Gemini 3.8 Flash",
+        desktop_alias: "claude-sonnet-5",
+        desktop_label: "Gemini 3.8 Flash",
+        codex_desktop_alias: "gpt-5.4",
+        codex_desktop_reasoning_efforts: &["low", "medium", "high"],
+        score: Some(50),
+        context: Some(1_048_576),
+        output: Some(65_536),
+        reasoning: true,
+        reasoning_efforts: &["low", "medium", "high"],
+        vision: true,
+        audio: true,
+        video: true,
+        native_claude: false,
+        forced_effort: None,
+    },
+];
+
+pub const CODEX_MODELS: &[Model] = &[
     Model {
         upstream: "cx/gpt-5.6-sol",
         label: "GPT 5.6 Sol",
@@ -192,16 +359,16 @@ mod tests {
     }
 
     fn by_codex_desktop_alias(alias: &str) -> Option<&'static Model> {
-        MODELS
+        CODEX_MODELS
             .iter()
             .find(|model| model.codex_desktop_alias == alias)
     }
 
     #[test]
     fn claude_code_roles_match_gateway_tiers() {
-        assert_eq!(DEFAULT_MODEL, "cx/gpt-5.6-sol");
-        assert_eq!(FABLE_MODEL, "cx/gpt-5.6-sol");
-        assert_eq!(OPUS_MODEL, "cx/gpt-5.6-terra");
+        assert_eq!(DEFAULT_MODEL, "cx/gpt-6-astra");
+        assert_eq!(FABLE_MODEL, "cx/gpt-6-astra");
+        assert_eq!(OPUS_MODEL, "bee/claude-opus-5");
         assert_eq!(SONNET_MODEL, "cx/gpt-5.6-luna");
         assert_eq!(HAIKU_MODEL, "ag/gemini-3.8-flash-tiered");
     }
@@ -211,7 +378,8 @@ mod tests {
         let upstream: HashSet<_> = MODELS.iter().map(|model| model.upstream).collect();
         let expected = [
             "ag/gemini-3.8-flash-tiered",
-            "cx/gpt-5.6-sol",
+            "cx/gpt-6-astra",
+            "bee/claude-opus-5",
             "cx/gpt-5.6-terra",
             "cx/gpt-5.6-luna",
             "cmc/deepseek/deepseek-v4-flash",
@@ -232,7 +400,8 @@ mod tests {
         assert_eq!(
             labels,
             [
-                "GPT 5.6 Sol",
+                "GPT 6 Astra",
+                "Claude Opus 5",
                 "GPT 5.6 Terra",
                 "GPT 5.6 Luna",
                 "Grok 4.6",
@@ -260,8 +429,11 @@ mod tests {
         let gemini = by_desktop_alias("claude-sonnet-5").unwrap();
         assert_eq!(gemini.upstream, "ag/gemini-3.8-flash-tiered");
 
-        let sol = by_desktop_alias("claude-opus-4-8").unwrap();
-        assert_eq!(sol.upstream, "cx/gpt-5.6-sol");
+        let astra = by_desktop_alias("claude-opus-4-8").unwrap();
+        assert_eq!(astra.upstream, "cx/gpt-6-astra");
+
+        let opus = by_desktop_alias("claude-opus-5").unwrap();
+        assert_eq!(opus.upstream, "bee/claude-opus-5");
 
         let deepseek = by_desktop_alias("claude-haiku-4-5-20251001").unwrap();
         assert_eq!(deepseek.upstream, "cmc/deepseek/deepseek-v4-flash");
@@ -279,8 +451,9 @@ mod tests {
     /// Routes for reasoning models must use one of these or Effort disappears.
     #[test]
     fn reasoning_routes_use_effort_capable_ids() {
-        const EFFORT_CAPABLE: [&str; 7] = [
+        const EFFORT_CAPABLE: [&str; 8] = [
             "claude-fable-5",
+            "claude-opus-5",
             "claude-sonnet-5",
             "claude-opus-4-5-20251101",
             "claude-opus-4-6",
@@ -290,7 +463,8 @@ mod tests {
         ];
 
         for upstream in [
-            "cx/gpt-5.6-sol",
+            "cx/gpt-6-astra",
+            "bee/claude-opus-5",
             "cx/gpt-5.6-terra",
             "cx/gpt-5.6-luna",
             "gcli/grok-4.6",
@@ -314,7 +488,8 @@ mod tests {
     #[test]
     fn claude_desktop_picker_routes_keep_verified_effort_mapping() {
         let expected = [
-            ("cx/gpt-5.6-sol", "claude-opus-4-8"),
+            ("cx/gpt-6-astra", "claude-opus-4-8"),
+            ("bee/claude-opus-5", "claude-opus-5"),
             ("cx/gpt-5.6-terra", "claude-opus-4-7"),
             ("cx/gpt-5.6-luna", "claude-sonnet-4-6"),
             ("ag/gemini-3.8-flash-tiered", "claude-sonnet-5"),
@@ -342,8 +517,9 @@ mod tests {
     /// have forced_effort = None.
     #[test]
     fn non_effort_routes_declare_forced_effort() {
-        const EFFORT_CAPABLE: [&str; 7] = [
+        const EFFORT_CAPABLE: [&str; 8] = [
             "claude-fable-5",
+            "claude-opus-5",
             "claude-sonnet-5",
             "claude-opus-4-8",
             "claude-opus-4-7",
@@ -382,9 +558,10 @@ mod tests {
     fn reasoning_efforts_match_api_verified_contracts() {
         let expected: Vec<(&str, &[&str])> = vec![
             (
-                "cx/gpt-5.6-sol",
+                "cx/gpt-6-astra",
                 &["none", "minimal", "low", "medium", "high", "xhigh", "max"],
             ),
+            ("bee/claude-opus-5", &["low", "medium", "high", "max"]),
             (
                 "cx/gpt-5.6-terra",
                 &["none", "minimal", "low", "medium", "high", "xhigh", "max"],
@@ -428,12 +605,12 @@ mod tests {
             ("gpt-5.3", "gcli/grok-4.6"),
             ("gpt-5.3-turbo", "cmc/z-ai/glm-5.3-flash"),
         ];
-        let aliases: HashSet<_> = MODELS
+        let aliases: HashSet<_> = CODEX_MODELS
             .iter()
             .map(|model| model.codex_desktop_alias)
             .collect();
 
-        assert_eq!(aliases.len(), MODELS.len());
+        assert_eq!(aliases.len(), CODEX_MODELS.len());
         for (alias, upstream) in expected {
             assert_eq!(
                 by_codex_desktop_alias(alias).map(|model| model.upstream),

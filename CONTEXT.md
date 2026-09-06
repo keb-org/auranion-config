@@ -11,22 +11,26 @@ This document records the durable state, decisions, and verified facts for the `
 - Dependencies: `anyhow`, `clap`, `crossterm 0.29`, `dialoguer`, `directories`, `keyring`, `ratatui 0.30`, `serde`, `serde_json`, `toml_edit`.
 - Interactive integration picker is Ratatui; saved-key confirm and password entry stay native (Dialoguer).
 
-## Canonical eight models (order is user priority — grouped by family: GPT → Grok → Muse Spark → DeepSeek → Gemini)
+## Canonical nine models (order is user priority — grouped by family: GPT → Claude → Grok → Muse Spark → DeepSeek → Gemini)
 
-1. `cx/gpt-5.6-sol` — GPT 5.6 Sol — context 372k, output 128k, vision
-2. `cx/gpt-5.6-terra` — GPT 5.6 Terra — context 272k, output 128k, vision
-3. `cx/gpt-5.6-luna` — GPT 5.6 Luna — context 272k, output 128k, vision
-4. `gcli/grok-4.6` — Grok 4.6 — context 500k, output 128k, vision
-5. `cmc/meta/muse-spark-1.3-contributor` — Muse Spark 1.3 — context 1M, output 128k, vision/audio/video
-6. `cmc/z-ai/glm-5.3-flash` — GLM 5.3 Flash — context 1M, output 131k, vision/video
-7. `cmc/deepseek/deepseek-v4-flash` — DeepSeek V4 Flash — context 1M, output 384k, no vision
-8. `ag/gemini-3.8-flash-tiered` — Gemini 3.8 Flash — context 1M, output 64k, vision/audio/video
+1. `cx/gpt-6-astra` — GPT 6 Astra — context 1M, output 128k, vision
+2. `bee/claude-opus-5` — Claude Opus 5 — context 1M, output 128k, vision
+3. `cx/gpt-5.6-terra` — GPT 5.6 Terra — context 272k, output 128k, vision
+4. `cx/gpt-5.6-luna` — GPT 5.6 Luna — context 272k, output 128k, vision
+5. `gcli/grok-4.6` — Grok 4.6 — context 500k, output 128k, vision
+6. `cmc/meta/muse-spark-1.3-contributor` — Muse Spark 1.3 — context 1M, output 128k, vision/audio/video
+7. `cmc/z-ai/glm-5.3-flash` — GLM 5.3 Flash — context 1M, output 131k, vision/video
+8. `cmc/deepseek/deepseek-v4-flash` — DeepSeek V4 Flash — context 1M, output 384k, no vision
+9. `ag/gemini-3.8-flash-tiered` — Gemini 3.8 Flash — context 1M, output 64k, vision/audio/video
+
+Note: ChatGPT / Codex Desktop app preserves its verified 8-model configuration (`CODEX_MODELS` with `cx/gpt-5.6-sol` as default) per user preference.
 
 Retired (must never reappear in profiles): Poolside Laguna S 2.1, Poolside Laguna XS 2.1, GLM 5.2, DeepSeek V4 Pro, Qwen 3.7 Plus, Qwen 3.6 Flash, Qwen 3.8 Max, Hermes 4 405B.
 
 ## Reasoning-effort contracts (API-verified via 9router invalid-value probes; DeepSeek Pro from api-docs.deepseek.com/thinking_mode + Firecrawl)
 
-- GPT-5.6 Sol / Terra / Luna: `none, minimal, low, medium, high, xhigh, max`
+- GPT 6 Astra / GPT-5.6 Terra / Luna: `none, minimal, low, medium, high, xhigh, max`
+- Claude Opus 5: `low, medium, high, max`
 - Gemini 3.8 Flash: `low, medium, high`
 - GLM 5.3 Flash: `low, high, max` (defaults to `max`)
 - DeepSeek V4 Flash: `low, high, max` (thinking on by default at `high`; no off-toggle)
@@ -46,12 +50,13 @@ Exact contract written by `merge_desktop`:
 - `inferenceGatewayApiKey`: saved Auranion key
 - `inferenceGatewayAuthScheme`: `x-api-key`
 - `modelDiscoveryEnabled`: `false`
-- `inferenceModels`: eight entries `{ name: desktop_alias, labelOverride: desktop_label, supports1m }`
+- `inferenceModels`: nine entries `{ name: desktop_alias, labelOverride: desktop_label, supports1m }`
 
 Removes obsolete `anthropicBaseUrl` / `anthropicApiKey`. No local proxy, supervisor, scheduled task, localhost listener, or certificate.
 
 Claude Desktop picker routes (verified effort mapping):
-- GPT 5.6 Sol → `claude-opus-4-8`
+- GPT 6 Astra → `claude-opus-4-8`
+- Claude Opus 5 → `claude-opus-5`
 - GPT 5.6 Terra → `claude-opus-4-7`
 - GPT 5.6 Luna → `claude-sonnet-4-6`
 - Grok 4.6 → `claude-opus-4-5-20251101`
@@ -60,16 +65,16 @@ Claude Desktop picker routes (verified effort mapping):
 - DeepSeek V4 Flash → `claude-haiku-4-5-20251001`
 - Gemini 3.8 Flash → `claude-sonnet-5`
 
-Effort-capable desktop aliases (render Effort control): Claude 5 slots (`claude-fable-5`, `claude-sonnet-5`) and Claude 4 effort-capable slots (`claude-opus-4-8`, `claude-opus-4-7`, `claude-opus-4-6`, `claude-opus-4-5-20251101`, `claude-sonnet-4-6`). Active: Sol (opus-4-8), Terra (opus-4-7), Luna (sonnet-4-6), Grok 4.6 (opus-4-5-20251101), Muse Spark 1.3 (fable-5), GLM 5.3 Flash (opus-4-6), Gemini 3.8 Flash (sonnet-5). DeepSeek routes on `claude-haiku-4-5-20251001` with `forced_effort: Some("max")`.
+Effort-capable desktop aliases (render Effort control): Claude 5 slots (`claude-fable-5`, `claude-opus-5`, `claude-sonnet-5`) and Claude 4 effort-capable slots (`claude-opus-4-8`, `claude-opus-4-7`, `claude-opus-4-6`, `claude-opus-4-5-20251101`, `claude-sonnet-4-6`). Active: Astra (opus-4-8), Claude Opus 5 (opus-5), Terra (opus-4-7), Luna (sonnet-4-6), Grok 4.6 (opus-4-5-20251101), Muse Spark 1.3 (fable-5), GLM 5.3 Flash (opus-4-6), Gemini 3.8 Flash (sonnet-5). DeepSeek routes on `claude-haiku-4-5-20251001` with `forced_effort: Some("max")`.
 
-Verified end-to-end: `claude-opus-4-8` returns upstream `gpt-5.6-sol`; `claude-sonnet-4-6` streams SSE HTTP 200.
+Verified end-to-end: `claude-opus-4-8` returns upstream `gpt-6-astra`; `claude-sonnet-4-6` streams SSE HTTP 200.
 
 ## Claude Code
 
 Writes `~/.claude/settings.json` env:
-- `ANTHROPIC_BASE_URL`, `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` (default `cx/gpt-5.6-sol`)
-- `ANTHROPIC_DEFAULT_FABLE_MODEL` = `cx/gpt-5.6-luna`, `ANTHROPIC_DEFAULT_OPUS_MODEL` = `cx/gpt-5.6-sol`, `ANTHROPIC_DEFAULT_SONNET_MODEL` = `cx/gpt-5.6-terra`, `ANTHROPIC_DEFAULT_HAIKU_MODEL` = `cmc/deepseek/deepseek-v4-flash` (raw gateway IDs)
-- Custom model option env describing the eight-model catalog.
+- `ANTHROPIC_BASE_URL`, `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` (default `cx/gpt-6-astra`)
+- `ANTHROPIC_DEFAULT_FABLE_MODEL` = `cx/gpt-6-astra`, `ANTHROPIC_DEFAULT_OPUS_MODEL` = `bee/claude-opus-5`, `ANTHROPIC_DEFAULT_SONNET_MODEL` = `cx/gpt-5.6-luna`, `ANTHROPIC_DEFAULT_HAIKU_MODEL` = `ag/gemini-3.8-flash-tiered` (raw gateway IDs)
+- Custom model option env describing the nine-model catalog.
 
 ## Codex / ChatGPT Desktop
 

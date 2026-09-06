@@ -7,7 +7,7 @@ use std::{
 };
 use toml_edit::{Array, DocumentMut, Item, Table, TableLike, value};
 
-use crate::catalog::{DEFAULT_MODEL, MODELS};
+use crate::catalog::{CODEX_DEFAULT_MODEL, CODEX_MODELS};
 
 use super::super::{
     BASE_URL,
@@ -452,7 +452,7 @@ fn configured_document(path: &Path, catalog_path: &Path, command: &Path) -> Resu
 
 fn merge_document(document: &mut DocumentMut, catalog_path: &Path, command: &Path, cli: bool) {
     if cli {
-        document["model"] = DEFAULT_MODEL.into();
+        document["model"] = CODEX_DEFAULT_MODEL.into();
         document["model_provider"] = "auranion".into();
     }
     document["model_catalog_json"] = catalog_path.to_string_lossy().into_owned().into();
@@ -487,7 +487,7 @@ fn ensure_table(item: &mut Item) -> &mut Table {
 }
 
 fn catalog_value() -> Value {
-    let desktop = MODELS.iter().enumerate().map(|(priority, model)| {
+    let desktop = CODEX_MODELS.iter().enumerate().map(|(priority, model)| {
         let efforts = supported_efforts(model.codex_desktop_reasoning_efforts);
         catalog_entry(
             model,
@@ -499,7 +499,7 @@ fn catalog_value() -> Value {
             priority,
         )
     });
-    let cli = MODELS.iter().enumerate().map(|(priority, model)| {
+    let cli = CODEX_MODELS.iter().enumerate().map(|(priority, model)| {
         let efforts = supported_efforts(model.reasoning_efforts);
         catalog_entry(
             model,
@@ -508,7 +508,7 @@ fn catalog_value() -> Value {
             format!("{} via Auranion", model.label),
             &efforts,
             "hide",
-            priority + MODELS.len(),
+            priority + CODEX_MODELS.len(),
         )
     });
     json!({ "models": desktop.chain(cli).collect::<Vec<_>>() })
@@ -696,7 +696,7 @@ fn is_legacy_subagent(document: &DocumentMut) -> bool {
         .and_then(Item::as_table)
         .is_some_and(|subagent| {
             subagent.get("description").and_then(Item::as_str) == Some("Auranion subagent")
-                && subagent.get("model").and_then(Item::as_str) == Some(DEFAULT_MODEL)
+                && subagent.get("model").and_then(Item::as_str) == Some(CODEX_DEFAULT_MODEL)
         })
 }
 
@@ -705,8 +705,8 @@ fn is_legacy_profiles(document: &DocumentMut) -> bool {
         return false;
     };
 
-    profiles.iter().count() == MODELS.len()
-        && MODELS.iter().all(|model| {
+    profiles.iter().count() == CODEX_MODELS.len()
+        && CODEX_MODELS.iter().all(|model| {
             profiles
                 .get(model.label)
                 .and_then(Item::as_table)
@@ -719,7 +719,7 @@ fn is_legacy_profiles(document: &DocumentMut) -> bool {
 }
 
 fn desktop_providers_value() -> Value {
-    let model_providers = MODELS
+    let model_providers = CODEX_MODELS
         .iter()
         .map(|model| {
             (
@@ -736,7 +736,7 @@ fn desktop_providers_value() -> Value {
 
 #[cfg(test)]
 fn legacy_desktop_providers() -> Value {
-    let model_providers = MODELS
+    let model_providers = CODEX_MODELS
         .iter()
         .map(|model| (model.upstream.to_string(), Value::String("auranion".into())))
         .collect::<Map<_, _>>();
@@ -1142,9 +1142,9 @@ mod tests {
 
     fn legacy_config() -> String {
         let mut config = format!(
-            "model_catalog_json = \"C:/old/auranion.json\"\n\n[model_providers.auranion]\nname = \"Auranion\"\nbase_url = \"{BASE_URL}\"\nenv_key = \"OPENAI_API_KEY\"\nwire_api = \"responses\"\ncustom = \"keep\"\n\n[agents.subagent]\ndescription = \"Auranion subagent\"\nmodel = \"{DEFAULT_MODEL}\"\ncustom = \"keep\"\n"
+            "model_catalog_json = \"C:/old/auranion.json\"\n\n[model_providers.auranion]\nname = \"Auranion\"\nbase_url = \"{BASE_URL}\"\nenv_key = \"OPENAI_API_KEY\"\nwire_api = \"responses\"\ncustom = \"keep\"\n\n[agents.subagent]\ndescription = \"Auranion subagent\"\nmodel = \"{CODEX_DEFAULT_MODEL}\"\ncustom = \"keep\"\n"
         );
-        for model in MODELS {
+        for model in CODEX_MODELS {
             config.push_str(&format!(
                 "\n[profiles.\"{}\"]\nmodel = \"{}\"\nmodel_provider = \"auranion\"\n",
                 model.label, model.upstream
@@ -1208,7 +1208,7 @@ mod tests {
         let reselected = read_toml(&config).unwrap();
         assert_eq!(
             reselected.get("model").and_then(Item::as_str),
-            Some(DEFAULT_MODEL)
+            Some(CODEX_DEFAULT_MODEL)
         );
         assert_eq!(
             reselected["model_providers"]["auranion"]["auth"]["command"].as_str(),
@@ -1679,7 +1679,7 @@ mod tests {
         let provider = &document["model_providers"]["auranion"];
         assert_eq!(
             document.get("model").and_then(Item::as_str),
-            Some(DEFAULT_MODEL)
+            Some(CODEX_DEFAULT_MODEL)
         );
         assert_eq!(
             document.get("model_provider").and_then(Item::as_str),
@@ -1759,14 +1759,14 @@ mod tests {
 
         let generated = read_json(&catalog).unwrap();
         let entries = generated.get("models").and_then(Value::as_array).unwrap();
-        assert_eq!(entries.len(), MODELS.len() * 2);
+        assert_eq!(entries.len(), CODEX_MODELS.len() * 2);
         let slugs = entries
             .iter()
             .map(|entry| entry["slug"].as_str().unwrap())
             .collect::<std::collections::HashSet<_>>();
-        assert_eq!(slugs.len(), MODELS.len() * 2);
+        assert_eq!(slugs.len(), CODEX_MODELS.len() * 2);
 
-        for model in MODELS {
+        for model in CODEX_MODELS {
             let desktop = entries
                 .iter()
                 .find(|entry| entry["slug"] == model.codex_desktop_alias)
@@ -1833,8 +1833,8 @@ mod tests {
         let providers = desktop_providers_value();
         assert_eq!(providers["default_provider"], "openai");
         let routes = providers["model_providers"].as_object().unwrap();
-        assert_eq!(routes.len(), MODELS.len());
-        for model in MODELS {
+        assert_eq!(routes.len(), CODEX_MODELS.len());
+        for model in CODEX_MODELS {
             assert_eq!(
                 routes.get(model.codex_desktop_alias),
                 Some(&Value::String("auranion".into()))

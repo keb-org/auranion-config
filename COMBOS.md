@@ -1,6 +1,7 @@
 | Combo | Target |
 | --- | --- |
-| `claude-opus-4-8` | `cx/gpt-5.6-sol` |
+| `claude-opus-4-8` | `cx/gpt-6-astra` |
+| `claude-opus-5` | `bee/claude-opus-5` |
 | `claude-opus-4-7` | `cx/gpt-5.6-terra` |
 | `claude-sonnet-4-6` | `cx/gpt-5.6-luna` |
 | `claude-opus-4-5-20251101` | `gcli/grok-4.6` |
