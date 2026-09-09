@@ -7,7 +7,6 @@ Claude Desktop routes by Anthropic alias. Any `claude-*` slug is accepted; Claud
 | Slug (`desktop_alias`) | Route → upstream | Effort control |
 | --- | --- | --- |
 | `claude-opus-4-8` | `cx/gpt-6-astra` | Yes — user picks effort |
-| `claude-opus-5` | `bee/claude-opus-5` | Yes — user picks effort |
 | `claude-opus-4-7` | `cx/gpt-5.6-terra` | Yes — user picks effort |
 | `claude-sonnet-4-6` | `cx/gpt-5.6-luna` | Yes — user picks effort |
 | `claude-opus-4-5-20251101` | `gcli/grok-4.6` | Yes (ultra→xhigh) |
@@ -16,7 +15,7 @@ Claude Desktop routes by Anthropic alias. Any `claude-*` slug is accepted; Claud
 | `claude-haiku-4-5-20251001` | `cmc/deepseek/deepseek-v4-flash` | No — forced `max` |
 | `claude-sonnet-5` | `ag/gemini-3.8-flash-tiered` | Yes (adaptive / low-high) |
 
-Source: `src/catalog.rs` `MODELS[].desktop_alias`. Effort-capable set is `{ claude-fable-5, claude-opus-5, claude-sonnet-5, claude-opus-4-8, claude-opus-4-7, claude-opus-4-6, claude-opus-4-5-20251101, claude-sonnet-4-6 }`. DeepSeek routes on `claude-haiku-4-5-20251001` with `forced_effort: Some("max")`.
+Source: `src/catalog.rs` `MODELS[].desktop_alias`. Effort-capable set is `{ claude-fable-5, claude-sonnet-5, claude-opus-4-8, claude-opus-4-7, claude-opus-4-6, claude-opus-4-5-20251101, claude-sonnet-4-6 }`. DeepSeek routes on `claude-haiku-4-5-20251001` with `forced_effort: Some("max")`.
 
 ## ChatGPT / Codex Desktop — accepted `codex_desktop_alias` values
 

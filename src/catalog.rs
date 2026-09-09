@@ -31,7 +31,7 @@ pub struct Model {
 
 pub const DEFAULT_MODEL: &str = "cx/gpt-6-astra";
 pub const FABLE_MODEL: &str = "cx/gpt-6-astra";
-pub const OPUS_MODEL: &str = "bee/claude-opus-5";
+pub const OPUS_MODEL: &str = "cx/gpt-5.6-terra";
 pub const SONNET_MODEL: &str = "cx/gpt-5.6-luna";
 pub const HAIKU_MODEL: &str = "ag/gemini-3.8-flash-tiered";
 
@@ -54,24 +54,6 @@ pub const MODELS: &[Model] = &[
         audio: false,
         video: false,
         native_claude: false,
-        forced_effort: None,
-    },
-    Model {
-        upstream: "bee/claude-opus-5",
-        label: "Claude Opus 5",
-        desktop_alias: "claude-opus-5",
-        desktop_label: "Claude Opus 5",
-        codex_desktop_alias: "claude-opus-5",
-        codex_desktop_reasoning_efforts: &[],
-        score: None,
-        context: Some(1_000_000),
-        output: Some(128_000),
-        reasoning: true,
-        reasoning_efforts: &["low", "medium", "high", "max"],
-        vision: true,
-        audio: false,
-        video: false,
-        native_claude: true,
         forced_effort: None,
     },
     Model {
@@ -368,7 +350,7 @@ mod tests {
     fn claude_code_roles_match_gateway_tiers() {
         assert_eq!(DEFAULT_MODEL, "cx/gpt-6-astra");
         assert_eq!(FABLE_MODEL, "cx/gpt-6-astra");
-        assert_eq!(OPUS_MODEL, "bee/claude-opus-5");
+        assert_eq!(OPUS_MODEL, "cx/gpt-5.6-terra");
         assert_eq!(SONNET_MODEL, "cx/gpt-5.6-luna");
         assert_eq!(HAIKU_MODEL, "ag/gemini-3.8-flash-tiered");
     }
@@ -379,7 +361,6 @@ mod tests {
         let expected = [
             "ag/gemini-3.8-flash-tiered",
             "cx/gpt-6-astra",
-            "bee/claude-opus-5",
             "cx/gpt-5.6-terra",
             "cx/gpt-5.6-luna",
             "cmc/deepseek/deepseek-v4-flash",
@@ -401,7 +382,6 @@ mod tests {
             labels,
             [
                 "GPT 6 Astra",
-                "Claude Opus 5",
                 "GPT 5.6 Terra",
                 "GPT 5.6 Luna",
                 "Grok 4.6",
@@ -432,9 +412,6 @@ mod tests {
         let astra = by_desktop_alias("claude-opus-4-8").unwrap();
         assert_eq!(astra.upstream, "cx/gpt-6-astra");
 
-        let opus = by_desktop_alias("claude-opus-5").unwrap();
-        assert_eq!(opus.upstream, "bee/claude-opus-5");
-
         let deepseek = by_desktop_alias("claude-haiku-4-5-20251001").unwrap();
         assert_eq!(deepseek.upstream, "cmc/deepseek/deepseek-v4-flash");
 
@@ -451,9 +428,8 @@ mod tests {
     /// Routes for reasoning models must use one of these or Effort disappears.
     #[test]
     fn reasoning_routes_use_effort_capable_ids() {
-        const EFFORT_CAPABLE: [&str; 8] = [
+        const EFFORT_CAPABLE: [&str; 7] = [
             "claude-fable-5",
-            "claude-opus-5",
             "claude-sonnet-5",
             "claude-opus-4-5-20251101",
             "claude-opus-4-6",
@@ -464,7 +440,6 @@ mod tests {
 
         for upstream in [
             "cx/gpt-6-astra",
-            "bee/claude-opus-5",
             "cx/gpt-5.6-terra",
             "cx/gpt-5.6-luna",
             "gcli/grok-4.6",
@@ -489,7 +464,6 @@ mod tests {
     fn claude_desktop_picker_routes_keep_verified_effort_mapping() {
         let expected = [
             ("cx/gpt-6-astra", "claude-opus-4-8"),
-            ("bee/claude-opus-5", "claude-opus-5"),
             ("cx/gpt-5.6-terra", "claude-opus-4-7"),
             ("cx/gpt-5.6-luna", "claude-sonnet-4-6"),
             ("ag/gemini-3.8-flash-tiered", "claude-sonnet-5"),
@@ -517,9 +491,8 @@ mod tests {
     /// have forced_effort = None.
     #[test]
     fn non_effort_routes_declare_forced_effort() {
-        const EFFORT_CAPABLE: [&str; 8] = [
+        const EFFORT_CAPABLE: [&str; 7] = [
             "claude-fable-5",
-            "claude-opus-5",
             "claude-sonnet-5",
             "claude-opus-4-8",
             "claude-opus-4-7",
@@ -561,7 +534,6 @@ mod tests {
                 "cx/gpt-6-astra",
                 &["none", "minimal", "low", "medium", "high", "xhigh", "max"],
             ),
-            ("bee/claude-opus-5", &["low", "medium", "high", "max"]),
             (
                 "cx/gpt-5.6-terra",
                 &["none", "minimal", "low", "medium", "high", "xhigh", "max"],
