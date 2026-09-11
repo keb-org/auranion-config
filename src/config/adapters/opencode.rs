@@ -312,7 +312,7 @@ mod tests {
         let glm_variants = glm.get("variants").and_then(|v| v.as_object()).unwrap();
         assert!(glm_variants.contains_key("low") && glm_variants.contains_key("max"));
         // DeepSeek has low/high/max only
-        let ds = &models["cmc/deepseek/deepseek-v4-flash"];
+        let ds = &models["deepseek/deepseek-v4.1-flash"];
         let variants = ds.get("variants").and_then(|v| v.as_object()).unwrap();
         assert!(variants.contains_key("low") && variants.contains_key("max"));
         std::fs::remove_dir_all(&dir).unwrap();

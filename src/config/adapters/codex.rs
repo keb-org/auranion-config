@@ -487,7 +487,7 @@ fn ensure_table(item: &mut Item) -> &mut Table {
 }
 
 fn catalog_value() -> Value {
-    let desktop = CODEX_MODELS.iter().enumerate().map(|(priority, model)| {
+    let models = CODEX_MODELS.iter().enumerate().map(|(priority, model)| {
         let efforts = supported_efforts(model.codex_desktop_reasoning_efforts);
         catalog_entry(
             model,
@@ -499,19 +499,7 @@ fn catalog_value() -> Value {
             priority,
         )
     });
-    let cli = CODEX_MODELS.iter().enumerate().map(|(priority, model)| {
-        let efforts = supported_efforts(model.reasoning_efforts);
-        catalog_entry(
-            model,
-            model.upstream,
-            model.label.to_owned(),
-            format!("{} via Auranion", model.label),
-            &efforts,
-            "hide",
-            priority + CODEX_MODELS.len(),
-        )
-    });
-    json!({ "models": desktop.chain(cli).collect::<Vec<_>>() })
+    json!({ "models": models.collect::<Vec<_>>() })
 }
 
 /// The codex CLI parses the same `auranion.json` catalog for both the desktop
@@ -1759,24 +1747,19 @@ mod tests {
 
         let generated = read_json(&catalog).unwrap();
         let entries = generated.get("models").and_then(Value::as_array).unwrap();
-        assert_eq!(entries.len(), CODEX_MODELS.len() * 2);
+        assert_eq!(entries.len(), CODEX_MODELS.len());
         let slugs = entries
             .iter()
             .map(|entry| entry["slug"].as_str().unwrap())
             .collect::<std::collections::HashSet<_>>();
-        assert_eq!(slugs.len(), CODEX_MODELS.len() * 2);
+        assert_eq!(slugs.len(), CODEX_MODELS.len());
 
         for model in CODEX_MODELS {
             let desktop = entries
                 .iter()
                 .find(|entry| entry["slug"] == model.codex_desktop_alias)
                 .expect("Desktop alias entry missing");
-            let cli = entries
-                .iter()
-                .find(|entry| entry["slug"] == model.upstream)
-                .expect("CLI entry missing");
             assert_eq!(desktop["visibility"], "list");
-            assert_eq!(cli["visibility"], "hide");
             let desktop_efforts: Vec<_> = desktop["supported_reasoning_levels"]
                 .as_array()
                 .unwrap()
@@ -1789,27 +1772,10 @@ mod tests {
                 "desktop catalog entry for {} must only emit levels the codex CLI accepts",
                 model.codex_desktop_alias
             );
-            let expected_cli = supported_efforts(model.reasoning_efforts);
-            assert_eq!(
-                cli["supported_reasoning_levels"]
-                    .as_array()
-                    .unwrap()
-                    .iter()
-                    .map(|effort| effort["effort"].as_str().unwrap())
-                    .collect::<Vec<_>>(),
-                expected_cli,
-                "cli catalog entry for {} must only emit levels the codex CLI accepts",
-                model.upstream
-            );
-            assert!(
-                expected_desktop
-                    .iter()
-                    .chain(expected_cli.iter())
-                    .all(|effort| matches!(
-                        *effort,
-                        "none" | "minimal" | "low" | "medium" | "high" | "xhigh"
-                    ))
-            );
+            assert!(expected_desktop.iter().all(|effort| matches!(
+                *effort,
+                "none" | "minimal" | "low" | "medium" | "high" | "xhigh"
+            )));
         }
         for entry in entries {
             assert!(entry.get("model_messages").is_some());
@@ -1839,7 +1805,9 @@ mod tests {
                 routes.get(model.codex_desktop_alias),
                 Some(&Value::String("auranion".into()))
             );
-            assert!(!routes.contains_key(model.upstream));
+            if model.codex_desktop_alias != model.upstream {
+                assert!(!routes.contains_key(model.upstream));
+            }
         }
     }
 

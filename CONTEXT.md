@@ -19,10 +19,10 @@ This document records the durable state, decisions, and verified facts for the `
 4. `gcli/grok-4.6` — Grok 4.6 — context 500k, output 128k, vision
 5. `cmc/meta/muse-spark-1.3-contributor` — Muse Spark 1.3 — context 1M, output 128k, vision/audio/video
 6. `cmc/z-ai/glm-5.3-flash` — GLM 5.3 Flash — context 1M, output 131k, vision/video
-7. `cmc/deepseek/deepseek-v4-flash` — DeepSeek V4 Flash — context 1M, output 384k, no vision
+7. `deepseek/deepseek-v4.1-flash` — DeepSeek V4.1 Flash — context 1M, output 384k, vision
 8. `ag/gemini-3.8-flash-tiered` — Gemini 3.8 Flash — context 1M, output 64k, vision/audio/video
 
-Note: ChatGPT / Codex Desktop app preserves its verified 8-model configuration (`CODEX_MODELS` with `cx/gpt-5.6-sol` as default) per user preference.
+Note: ChatGPT / Codex Desktop app shows the default native catalog only — 5 identity-routed models (`CODEX_MODELS`: `gpt-6-astra`, `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`, `gpt-5.5`, default `gpt-6-astra`) per user preference. All other agent tools keep the 8-model `MODELS` catalog.
 
 Retired (must never reappear in profiles): Poolside Laguna S 2.1, Poolside Laguna XS 2.1, GLM 5.2, DeepSeek V4 Pro, Qwen 3.7 Plus, Qwen 3.6 Flash, Qwen 3.8 Max, Hermes 4 405B, Claude Opus 5 (`bee/claude-opus-5`).
 
@@ -31,7 +31,7 @@ Retired (must never reappear in profiles): Poolside Laguna S 2.1, Poolside Lagun
 - GPT 6 Astra / GPT-5.6 Terra / Luna: `none, minimal, low, medium, high, xhigh, max`
 - Gemini 3.8 Flash: `low, medium, high`
 - GLM 5.3 Flash: `low, high, max` (defaults to `max`)
-- DeepSeek V4 Flash: `low, high, max` (thinking on by default at `high`; no off-toggle)
+- DeepSeek V4.1 Flash: `low, high, max` (thinking on by default at `high`; no off-toggle)
 - Muse Spark 1.3: `shortest, low, medium, high, xhigh, max` (`none` returns HTTP 400; `max` rolled out for 1.3 per ai.developer.meta.com/docs/features/reasoning)
 - Grok 4.6: `low, medium, high, xhigh` (default `high`, cannot disable; from docs.x.ai)
 
@@ -59,7 +59,7 @@ Claude Desktop picker routes (verified effort mapping):
 - Grok 4.6 → `claude-opus-4-5-20251101`
 - Muse Spark 1.3 → `claude-fable-5`
 - GLM 5.3 Flash → `claude-opus-4-6`
-- DeepSeek V4 Flash → `claude-haiku-4-5-20251001`
+- DeepSeek V4.1 Flash → `claude-haiku-4-5-20251001`
 - Gemini 3.8 Flash → `claude-sonnet-5`
 
 Effort-capable desktop aliases (render Effort control): Claude 5 slots (`claude-fable-5`, `claude-sonnet-5`) and Claude 4 effort-capable slots (`claude-opus-4-8`, `claude-opus-4-7`, `claude-opus-4-6`, `claude-opus-4-5-20251101`, `claude-sonnet-4-6`). Active: Astra (opus-4-8), Terra (opus-4-7), Luna (sonnet-4-6), Grok 4.6 (opus-4-5-20251101), Muse Spark 1.3 (fable-5), GLM 5.3 Flash (opus-4-6), Gemini 3.8 Flash (sonnet-5). DeepSeek routes on `claude-haiku-4-5-20251001` with `forced_effort: Some("max")`.
@@ -76,12 +76,12 @@ Writes `~/.claude/settings.json` env:
 ## Codex / ChatGPT Desktop
 
 Writes:
-- `~/.codex/config.toml`: removes `preferred_auth_method`, global `model`, `model_provider`. Sets `model_catalog_json`, `[model_providers.auranion]` (base_url `https://agent.auranion.com/v1`, `env_key=OPENAI_API_KEY`, `wire_api=responses`), `agents.subagent` model `cx/gpt-5.6-sol`, named profiles for each model.
-- `~/.codex/model-catalogs/auranion.json`: generated catalog. `supported_reasoning_levels` per model from the effort contract; `default_reasoning_level=medium` only when the model has efforts. No `default_reasoning_level` for GLM.
-- `~/.codex/desktop-model-providers.json`: `version:1`, `default_provider:"openai"`, providers `openai` + `auranion`, and `model_providers` mapping all eight slugs to `auranion`.
+- `~/.codex/config.toml`: sets `model_catalog_json`, `[model_providers.auranion]` (base_url `https://agent.auranion.com/v1`, `wire_api=responses`, auth command `provider-token`). Sets global `model` (`gpt-6-astra`) + `model_provider=auranion` only when Codex CLI is selected; desktop-only leaves CLI root keys untouched. No `agents.subagent`, no `[profiles.*]` — identity routing only.
+- `~/.codex/model-catalogs/auranion.json`: generated catalog with 5 native identity entries (`gpt-6-astra`, `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`, `gpt-5.5`). `supported_reasoning_levels` filtered to CLI-parseable levels; `default_reasoning_level=medium` only when the model has efforts. No `default_reasoning_level` for `gpt-5.5`.
+- `~/.codex/desktop-model-providers.json`: `default_provider:"openai"`, `model_providers` mapping the 5 native slugs to `auranion` (desktop only).
 
 Rules:
-- Do NOT set global `model` or `model_provider`.
+- Do NOT set global `model` or `model_provider` for desktop-only; CLI selection sets them to the Codex default.
 - Auranion profiles require Codex API-key mode. Selection replaces `auth.json` with `auth_mode=apikey` and the saved Auranion key; it must not run through signed-in ChatGPT mode.
 - Deselect restores the complete pre-Auranion `auth.json`, including ChatGPT OAuth tokens.
 - Better-Codex-App-Custom-Provider-Support repo (`D:\KEB\finance\old\Better-Codex-App-Custom-Provider-Support`) defines the provider-routing contract. Its app patch is macOS-only; no Windows Store app modification is authorized.
