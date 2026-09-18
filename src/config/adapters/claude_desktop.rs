@@ -9,7 +9,7 @@ use std::{
 use crate::catalog::CLAUDE_DESKTOP_MODELS;
 
 use super::super::{
-    BASE_URL,
+    ANTHROPIC_BASE_URL,
     io::{json_object_mut, read_json, restore_json_fields, restore_key, write_json},
     state::State,
 };
@@ -244,7 +244,7 @@ fn merge(path: &Path, api_key: &str) -> Result<()> {
     let object = json_object_mut(&mut config, "Claude Desktop config root")?;
     object.insert("inferenceProvider".into(), "gateway".into());
     object.insert("inferenceCredentialKind".into(), "static".into());
-    object.insert("inferenceGatewayBaseUrl".into(), BASE_URL.into());
+    object.insert("inferenceGatewayBaseUrl".into(), ANTHROPIC_BASE_URL.into());
     object.insert("inferenceGatewayApiKey".into(), api_key.into());
     object.insert("inferenceGatewayAuthScheme".into(), "x-api-key".into());
     object.insert("modelDiscoveryEnabled".into(), false.into());
@@ -323,7 +323,7 @@ mod tests {
                 "autoModeEnabled": true,
                 "anthropicBaseUrl": "https://obsolete.example/v1",
                 "anthropicApiKey": "obsolete-key",
-                "inferenceGatewayBaseUrl": "http://127.0.0.1:8787",
+                "inferenceGatewayBaseUrl": "https://agent.auranion.com/v1",
                 "inferenceGatewayApiKey": "local-auranion-proxy",
                 "inferenceGatewayAuthScheme": "bearer"
             }),
@@ -347,7 +347,7 @@ mod tests {
             config
                 .get("inferenceGatewayBaseUrl")
                 .and_then(Value::as_str),
-            Some(BASE_URL)
+            Some("https://agent.auranion.com")
         );
         assert_eq!(
             config.get("inferenceGatewayApiKey").and_then(Value::as_str),
@@ -382,6 +382,8 @@ mod tests {
             );
         }
 
+        merge(&path, "test-key").unwrap();
+        assert_eq!(read_json(&path).unwrap(), config);
         std::fs::remove_dir_all(&dir).unwrap();
     }
 

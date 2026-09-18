@@ -1,12 +1,12 @@
 # Auranion Config — current architecture
 
-Updated: 2026-09-18. Package/binary: `auranion`, version 0.3.23.
+Updated: 2026-09-18. Package/binary: `auranion`, version 0.3.24.
 
 ## Catalogs
 
 - Claude Code and Claude Desktop: Fable 5.1, Opus 5, Sonnet 5, Haiku 4.5, strongest to lightest.
 - Codex CLI and Codex Desktop: GPT 6 Astra, GPT 5.6 Sol, Terra, Luna, strongest to lightest.
-- Model IDs pass unchanged to `https://agent.auranion.com/v1`. Gateway owns upstream routing, pools, fallback, and effort translation. See [COMBOS.md](COMBOS.md).
+- Model IDs pass unchanged to the gateway. Claude Code/Desktop receive the origin-only base `https://agent.auranion.com`; Codex/OpenCode/Hermes retain `https://agent.auranion.com/v1`. Gateway owns upstream routing, pools, fallback, and effort translation. See [COMBOS.md](COMBOS.md).
 - OpenCode and Hermes retain eight general models: `cx/gpt-6-astra`, `cx/gpt-5.6-terra`, `cx/gpt-5.6-luna`, `gcli/grok-4.6`, `cmc/meta/muse-spark-1.3-contributor`, `cmc/z-ai/glm-5.3-flash`, `deepseek/deepseek-v4.1-flash`, `ag/gemini-3.8-flash-tiered`.
 
 ## Claude
@@ -39,7 +39,7 @@ Original baselines remain immutable. Codex applies transactionally, preserves un
 - `tests/codex-native.mjs` checks generated desktop-only config against installed backend: strict config parsing, provider selection, ordered `model/list`, command auth, and 23 model/effort requests in one thread to a local fixture.
 - Installed version inspected: OpenAI.Codex 26.915.3509.0; backend 0.155.0-alpha.9.
 - Native fixture uses isolated temp config and fake credentials, not user config or live gateway.
-- Actual app UI interactions and live gateway inference are not verified. No installed configs applied, commit, push, or release performed.
+- Actual app UI interactions and live gateway inference are not verified. Installed client configs are not changed during verification.
 
 ## Documentation sources
 

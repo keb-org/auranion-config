@@ -14,7 +14,7 @@ const ROOT_KEYS: [&str; 4] = [
 ];
 
 use super::super::{
-    BASE_URL,
+    ANTHROPIC_BASE_URL,
     io::{json_object_mut, read_json, restore_json_fields, restore_object_keys, write_json},
     state::State,
 };
@@ -97,7 +97,7 @@ fn merge(path: &Path, api_key: &str) -> Result<()> {
     let environment = json_object_mut(environment, "Claude Code settings env")?;
     let catalog = model_catalog_description();
     let values = [
-        BASE_URL,
+        ANTHROPIC_BASE_URL,
         api_key,
         DEFAULT_MODEL,
         FABLE_MODEL,
@@ -134,11 +134,15 @@ mod tests {
             "auranion-claude-code-models-{}.json",
             std::process::id()
         ));
-        std::fs::write(&path, r#"{"permissions":{"allow":["Read"]},"env":{"USER_SETTING":"keep"},"modelPicker":{"options":[{"model":"old"}]}}"#).unwrap();
+        std::fs::write(&path, r#"{"permissions":{"allow":["Read"]},"env":{"USER_SETTING":"keep","ANTHROPIC_BASE_URL":"https://agent.auranion.com/v1"},"modelPicker":{"options":[{"model":"old"}]}}"#).unwrap();
 
         merge(&path, "key").unwrap();
         let settings = read_json(&path).unwrap();
         let environment = settings.get("env").and_then(Value::as_object).unwrap();
+        assert_eq!(
+            environment.get("ANTHROPIC_BASE_URL").and_then(Value::as_str),
+            Some("https://agent.auranion.com")
+        );
         assert_eq!(
             environment
                 .get("ANTHROPIC_DEFAULT_FABLE_MODEL")

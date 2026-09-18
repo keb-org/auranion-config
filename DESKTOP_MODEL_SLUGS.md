@@ -1,6 +1,6 @@
 # Model slots
 
-Four slots per Claude/Codex integration, strongest to lightest. Requests send IDs unchanged to `https://agent.auranion.com/v1`; gateway owns combo routing.
+Four slots per Claude/Codex integration, strongest to lightest. Requests send IDs unchanged; gateway owns combo routing. Auranion writes `https://agent.auranion.com` to Claude Code's `ANTHROPIC_BASE_URL` and Desktop's `inferenceGatewayBaseUrl`. Codex, OpenCode, and Hermes retain `https://agent.auranion.com/v1`. Reapply replaces the old versioned Claude base without changing unrelated settings.
 
 ## Claude Code and Claude Desktop
 

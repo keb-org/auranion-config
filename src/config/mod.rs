@@ -11,6 +11,7 @@ use std::{fs, io::Write};
 
 use self::{integration::Integration, state::State};
 
+pub(super) const ANTHROPIC_BASE_URL: &str = "https://agent.auranion.com";
 pub(super) const BASE_URL: &str = "https://agent.auranion.com/v1";
 
 pub(super) fn codex_desktop_routes() -> impl Iterator<Item = (&'static str, &'static str)> {
@@ -254,6 +255,11 @@ fn mask_key(key: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn openai_base_keeps_version_prefix() {
+        assert_eq!(BASE_URL, "https://agent.auranion.com/v1");
+    }
 
     #[test]
     fn integration_labels_are_stable() {
