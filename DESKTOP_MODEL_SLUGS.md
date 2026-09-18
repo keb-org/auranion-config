@@ -1,50 +1,41 @@
-# Desktop Model Slugs — Picker Acceptance
+# Model slots
 
-## Claude Desktop — accepted `desktop_alias` values
+Four slots per Claude/Codex integration, strongest to lightest. Requests send IDs unchanged to `https://agent.auranion.com/v1`; gateway owns combo routing.
 
-Claude Desktop routes by Anthropic alias. Any `claude-*` slug is accepted; Claude 5 slots (`claude-fable-5`, `claude-sonnet-5`) and Claude 4 effort-capable slots render reasoning/effort controls in the Model Picker.
+## Claude Code and Claude Desktop
 
-| Slug (`desktop_alias`) | Route → upstream | Effort control |
-| --- | --- | --- |
-| `claude-opus-4-8` | `cx/gpt-6-astra` | Yes — user picks effort |
-| `claude-opus-4-7` | `cx/gpt-5.6-terra` | Yes — user picks effort |
-| `claude-sonnet-4-6` | `cx/gpt-5.6-luna` | Yes — user picks effort |
-| `claude-opus-4-5-20251101` | `gcli/grok-4.6` | Yes (ultra→xhigh) |
-| `claude-fable-5` | `cmc/meta/muse-spark-1.3-contributor` | Yes (adaptive / ultra→xhigh) |
-| `claude-opus-4-6` | `cmc/z-ai/glm-5.3-flash` | Yes — user picks effort |
-| `claude-haiku-4-5-20251001` | `deepseek/deepseek-v4.1-flash` | No — forced `max` |
-| `claude-sonnet-5` | `ag/gemini-3.8-flash-tiered` | Yes (adaptive / low-high) |
+| Model ID | Label |
+| --- | --- |
+| `claude-fable-5-1` | Claude Fable 5.1 |
+| `claude-opus-5` | Claude Opus 5 |
+| `claude-sonnet-5` | Claude Sonnet 5 |
+| `claude-haiku-4-5-20251001` | Claude Haiku 4.5 |
 
-Source: `src/catalog.rs` `MODELS[].desktop_alias`. Effort-capable set is `{ claude-fable-5, claude-sonnet-5, claude-opus-4-8, claude-opus-4-7, claude-opus-4-6, claude-opus-4-5-20251101, claude-sonnet-4-6 }`. DeepSeek routes on `claude-haiku-4-5-20251001` with `forced_effort: Some("max")`.
+Claude Desktop writes four `inferenceModels` in this order, with `modelDiscoveryEnabled: false`, `supports1m: false`, and existing direct gateway authentication.
 
-## ChatGPT / Codex Desktop — accepted `codex_desktop_alias` values
+Claude Code writes ordered `modelPicker.options`, `replaceBuiltInOptions: true`, the matching `availableModels` allowlist, and native Fable/Opus/Sonnet/Haiku role IDs. Ordered custom picker requires Claude Code **2.1.242+**. Native Default/current-session rows can remain; managed organization settings can override user settings.
 
-ChatGPT Desktop's Model Picker only renders **native `gpt-*` slugs** it knows about. This side uses identity routing (`codex_desktop_alias == upstream`); the router handles pools server-side, so the app shows the default native catalog with no customization.
+## Codex CLI and ChatGPT / Codex Desktop
 
-### Official native slugs the picker will render (from `~/.codex/models_cache.json`)
+| Model ID | Native efforts |
+| --- | --- |
+| `gpt-6-astra` | low, medium, high, xhigh, max, ultra |
+| `gpt-5.6-sol` | low, medium, high, xhigh, max, ultra |
+| `gpt-5.6-terra` | low, medium, high, xhigh, max, ultra |
+| `gpt-5.6-luna` | low, medium, high, xhigh, max |
 
-| Native slug | Visibility | Reasoning |
-| --- | --- | --- |
-| `gpt-6-astra` | `list` | low / medium / high / xhigh / max / ultra |
-| `gpt-5.6-sol` | `list` | low / medium / high / xhigh / max / ultra |
-| `gpt-5.6-terra` | `list` | low / medium / high / xhigh / max / ultra |
-| `gpt-5.6-luna` | `list` | low / medium / high / xhigh / max |
-| `gpt-5.5` | `list` | *(none)* |
+Both use native `config.toml` with `model_provider = "auranion"`, default `model = "gpt-6-astra"`, and `model_catalog_json` pointing to `model-catalogs/auranion.json`. Catalog array order and priority agree. `model/list` supplies native model picker and effort choices; medium is catalog default. Ultra is native orchestration and sends max upstream.
 
-### Routing table actually written by `auranion config` (`codex_desktop_alias` → upstream)
+Desktop and CLI share `CODEX_HOME` (default `~/.codex`), so selecting either configures their shared provider. A selected root `profile` is cleared while enabled to prevent it overriding the provider/catalog; profile definitions remain and deselection restores the original selector. Deprecated `preferred_auth_method` is removed while enabled. Provider command authentication obtains Auranion key from secure storage. Existing `auth.json` and ChatGPT OAuth stay unchanged, except restoration of provably old Auranion-generated auth.
 
-The catalog `supported_reasoning_levels` is filtered through `CODEX_REASONING_EFFORTS` — the codex CLI enum only accepts `none / minimal / low / medium / high / xhigh` and fails to parse the whole catalog on `max`/`ultra`. The ChatGPT Desktop picker reads its own `models_cache.json` (native slugs above); it is not driven by these levels.
+Stock desktop does **not** consume `desktop-model-providers.json`. No new provider map is written. Previously recorded managed fields are restored/removed without deleting unrelated user fields. No app patch, `models_cache.json` edit, or local proxy.
 
-| App alias shown in picker | Routes to | Effort exposed to picker |
-| --- | --- | --- |
-| `gpt-6-astra` | `gpt-6-astra` | low / medium / high / xhigh / max / ultra |
-| `gpt-5.6-sol` | `gpt-5.6-sol` | low / medium / high / xhigh / max / ultra |
-| `gpt-5.6-terra` | `gpt-5.6-terra` | low / medium / high / xhigh / max / ultra |
-| `gpt-5.6-luna` | `gpt-5.6-luna` | low / medium / high / xhigh / max |
-| `gpt-5.5` | `gpt-5.5` | *(none)* |
+Compatibility checked with Windows **OpenAI.Codex 26.915.3509.0**, backend **0.155.0-alpha.9**. Older backends whose reasoning enum rejects max/ultra require an app/CLI update. This integration configures Codex Desktop, not the separate consumer ChatGPT application.
 
-See `COMBOS.md` for the matching 5 router combos.
+## Reapply and verification
 
-### Verification
+Reapply refreshes managed fields even after user edits, removes managed duplicates and retired `gpt-5.5`, and preserves unrelated settings and custom catalog entries. Four managed slots are not a promise to delete user-added models.
 
-Before adding a new slug, confirm it is in `models_cache.json` or has been tested end-to-end: `auranion config --apply` → restart ChatGPT Desktop → select alias → send a message → confirm the gateway logs the expected `model=` value. Do not add aliases by string-harvesting binaries.
+`tests/codex-native.mjs` uses an isolated temporary home, generated config, fake command-auth token, and loopback Responses fixture. It checks strict config parsing, four-model order, default provider, and all 23 model/effort combinations in one thread. No live gateway credentials or user app config are used.
+
+Restart desktop and start a new conversation after applying. Existing threads can retain their original provider. Actual desktop UI clicks and live gateway inference remain separate end-to-end checks.

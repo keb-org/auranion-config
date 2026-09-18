@@ -1,7 +1,7 @@
 use anyhow::{Context, Result, bail};
 use serde::Deserialize;
 use std::env;
-use std::io::Read;
+use std::{io::Read, path::Path, process::Command};
 
 const REPO: &str = "keb-org/auranion-config";
 
@@ -18,6 +18,26 @@ struct Asset {
 }
 
 pub(super) fn run() -> Result<()> {
+    // self_replace can move the running executable; retain its installed path.
+    let executable = env::current_exe().context("Failed to locate installed binary")?;
+    update_and_reapply(&executable, update_binary, reapply_saved_config)
+}
+
+fn update_and_reapply(
+    executable: &Path,
+    update: impl FnOnce(&Path) -> Result<()>,
+    reapply: impl FnOnce(&Path) -> Result<()>,
+) -> Result<()> {
+    let update = update(executable);
+    let reapply = reapply(executable);
+    match (update, reapply) {
+        (Err(update), Err(reapply)) => bail!("{update:#}; {reapply:#}"),
+        (Err(error), _) | (_, Err(error)) => Err(error),
+        (Ok(()), Ok(())) => Ok(()),
+    }
+}
+
+fn update_binary(executable: &Path) -> Result<()> {
     let current_version = env!("CARGO_PKG_VERSION");
     println!("Checking for updates (current: v{current_version})...");
 
@@ -59,7 +79,10 @@ pub(super) fn run() -> Result<()> {
         .read_to_end(&mut binary_bytes)
         .context("Failed to read binary stream")?;
 
-    let temp_file = tempfile_path()?;
+    let temp_file = executable
+        .parent()
+        .context("Failed to get executable directory")?
+        .join(format!(".auranion-update-{}", std::process::id()));
     std::fs::write(&temp_file, &binary_bytes).context("Failed to write temporary binary")?;
 
     self_replace::self_replace(&temp_file).context("Failed to replace current binary")?;
@@ -67,12 +90,18 @@ pub(super) fn run() -> Result<()> {
 
     println!("Successfully updated to v{latest_version}!");
 
-    if let Err(error) = crate::config::config_apply_saved() {
-        eprintln!("Update succeeded but reapplying saved configs failed: {error:#}");
-        eprintln!("Run `auranion config --apply` or `auranion config` to retry.");
-        return Ok(());
-    }
+    Ok(())
+}
 
+fn reapply_saved_config(executable: &Path) -> Result<()> {
+    // Start the installed binary, not the old code still running in this process.
+    let status = Command::new(executable)
+        .args(["config", "--apply"])
+        .status()
+        .context("Failed to reapply saved configs; retry `auranion config --apply`")?;
+    if !status.success() {
+        bail!("Config reapply failed ({status}); retry `auranion config --apply`");
+    }
     Ok(())
 }
 
@@ -88,14 +117,6 @@ fn target_asset_name() -> Result<&'static str> {
     }
 }
 
-fn tempfile_path() -> Result<std::path::PathBuf> {
-    let current_exe = env::current_exe()?;
-    let dir = current_exe
-        .parent()
-        .context("Failed to get executable directory")?;
-    Ok(dir.join(format!(".auranion-update-{}", std::process::id())))
-}
-
 fn is_newer(current: &str, latest: &str) -> bool {
     let parse =
         |v: &str| -> Vec<u64> { v.split('.').filter_map(|s| s.parse::<u64>().ok()).collect() };
@@ -107,6 +128,42 @@ fn is_newer(current: &str, latest: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn update_always_reapplies_installed_path_and_reports_both_errors() {
+        use std::cell::RefCell;
+        let installed = Path::new("installed/auranion");
+        for update_fails in [false, true] {
+            for reapply_fails in [false, true] {
+                let calls = RefCell::new(Vec::new());
+                let result = update_and_reapply(
+                    installed,
+                    |path| {
+                        assert_eq!(path, installed);
+                        calls.borrow_mut().push("update");
+                        if update_fails {
+                            bail!("update failed");
+                        }
+                        Ok(())
+                    },
+                    |path| {
+                        assert_eq!(path, installed);
+                        calls.borrow_mut().push("reapply");
+                        if reapply_fails {
+                            bail!("reapply failed");
+                        }
+                        Ok(())
+                    },
+                );
+                assert_eq!(*calls.borrow(), ["update", "reapply"]);
+                assert_eq!(result.is_err(), update_fails || reapply_fails);
+                if let Err(error) = result {
+                    assert_eq!(error.to_string().contains("update failed"), update_fails);
+                    assert_eq!(error.to_string().contains("reapply failed"), reapply_fails);
+                }
+            }
+        }
+    }
 
     #[test]
     fn test_version_comparison() {

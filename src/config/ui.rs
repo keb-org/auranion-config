@@ -438,7 +438,9 @@ fn get_integration_details<'a>(
         Integration::CodexDesktop => {
             lines.push(Line::from("  • ~/.codex/config.toml"));
             lines.push(Line::from("  • ~/.codex/model-catalogs/auranion.json"));
-            lines.push(Line::from("  • ~/.codex/desktop-model-providers.json"));
+            lines.push(Line::from(
+                "    Shared native provider with Codex CLI; login preserved.",
+            ));
         }
         Integration::CodexCli => {
             lines.push(Line::from("  • ~/.codex/config.toml"));
@@ -465,9 +467,18 @@ fn get_integration_details<'a>(
 
     lines.push(Line::from(""));
     match integration {
+        Integration::ClaudeDesktop | Integration::ClaudeCode => {
+            lines.push(Line::from(Span::styled(
+                "* Models (strongest to lightest, server-routed)",
+                Style::default().fg(Color::Green).bold(),
+            )));
+            for (id, label) in crate::catalog::CLAUDE_DESKTOP_MODELS {
+                lines.push(Line::from(format!("  • {id} ({label})")));
+            }
+        }
         Integration::CodexDesktop => {
             lines.push(Line::from(Span::styled(
-                "* App alias → Auranion target",
+                "* App slot → Gateway combo ID",
                 Style::default().fg(Color::Green).bold(),
             )));
             for (alias, target) in super::codex_desktop_routes() {
@@ -479,7 +490,12 @@ fn get_integration_details<'a>(
                 "* Models will be added",
                 Style::default().fg(Color::Green).bold(),
             )));
-            for model in crate::catalog::MODELS {
+            let models = if integration == Integration::CodexCli {
+                crate::catalog::CODEX_MODELS
+            } else {
+                crate::catalog::MODELS
+            };
+            for model in models {
                 lines.push(Line::from(format!(
                     "  • {} ({})",
                     model.upstream, model.label

@@ -29,13 +29,28 @@ pub struct Model {
     pub forced_effort: Option<&'static str>,
 }
 
-pub const DEFAULT_MODEL: &str = "cx/gpt-6-astra";
-pub const FABLE_MODEL: &str = "cx/gpt-6-astra";
-pub const OPUS_MODEL: &str = "cx/gpt-5.6-terra";
-pub const SONNET_MODEL: &str = "cx/gpt-5.6-luna";
-pub const HAIKU_MODEL: &str = "ag/gemini-3.8-flash-tiered";
+pub const FABLE_MODEL: &str = "claude-fable-5-1";
+pub const OPUS_MODEL: &str = "claude-opus-5";
+pub const SONNET_MODEL: &str = "claude-sonnet-5";
+pub const HAIKU_MODEL: &str = "claude-haiku-4-5-20251001";
 
 pub const CODEX_DEFAULT_MODEL: &str = "gpt-6-astra";
+
+// ponytail: fixed desktop slots; change IDs only when app catalogs change.
+// Upstream routing and effort translation belong to agent.auranion.com.
+pub const CLAUDE_DESKTOP_MODELS: &[(&str, &str)] = &[
+    ("claude-fable-5-1", "Claude Fable 5.1"),
+    ("claude-opus-5", "Claude Opus 5"),
+    ("claude-sonnet-5", "Claude Sonnet 5"),
+    ("claude-haiku-4-5-20251001", "Claude Haiku 4.5"),
+];
+
+pub const CODEX_DESKTOP_MODELS: &[&str] = &[
+    "gpt-6-astra",
+    "gpt-5.6-sol",
+    "gpt-5.6-terra",
+    "gpt-5.6-luna",
+];
 
 pub const MODELS: &[Model] = &[
     Model {
@@ -257,24 +272,6 @@ pub const CODEX_MODELS: &[Model] = &[
         native_claude: false,
         forced_effort: None,
     },
-    Model {
-        upstream: "gpt-5.5",
-        label: "GPT 5.5",
-        desktop_alias: "claude-opus-4-6",
-        desktop_label: "GPT 5.5",
-        codex_desktop_alias: "gpt-5.5",
-        codex_desktop_reasoning_efforts: &[],
-        score: None,
-        context: Some(1_000_000),
-        output: Some(128_000),
-        reasoning: false,
-        reasoning_efforts: &[],
-        vision: true,
-        audio: false,
-        video: false,
-        native_claude: false,
-        forced_effort: None,
-    },
 ];
 
 #[cfg(test)]
@@ -294,11 +291,24 @@ mod tests {
 
     #[test]
     fn claude_code_roles_match_gateway_tiers() {
-        assert_eq!(DEFAULT_MODEL, "cx/gpt-6-astra");
-        assert_eq!(FABLE_MODEL, "cx/gpt-6-astra");
-        assert_eq!(OPUS_MODEL, "cx/gpt-5.6-terra");
-        assert_eq!(SONNET_MODEL, "cx/gpt-5.6-luna");
-        assert_eq!(HAIKU_MODEL, "ag/gemini-3.8-flash-tiered");
+        assert_eq!(FABLE_MODEL, "claude-fable-5-1");
+        assert_eq!(OPUS_MODEL, "claude-opus-5");
+        assert_eq!(SONNET_MODEL, "claude-sonnet-5");
+        assert_eq!(HAIKU_MODEL, "claude-haiku-4-5-20251001");
+        assert_eq!(
+            CLAUDE_DESKTOP_MODELS
+                .iter()
+                .map(|&(id, _)| id)
+                .collect::<Vec<_>>(),
+            [FABLE_MODEL, OPUS_MODEL, SONNET_MODEL, HAIKU_MODEL]
+        );
+        assert_eq!(
+            CODEX_MODELS
+                .iter()
+                .map(|model| model.upstream)
+                .collect::<Vec<_>>(),
+            CODEX_DESKTOP_MODELS
+        );
     }
 
     #[test]
@@ -515,7 +525,6 @@ mod tests {
             ("gpt-5.6-sol", "gpt-5.6-sol"),
             ("gpt-5.6-terra", "gpt-5.6-terra"),
             ("gpt-5.6-luna", "gpt-5.6-luna"),
-            ("gpt-5.5", "gpt-5.5"),
         ];
         let aliases: HashSet<_> = CODEX_MODELS
             .iter()
@@ -547,7 +556,6 @@ mod tests {
                 &["low", "medium", "high", "xhigh", "max", "ultra"],
             ),
             ("gpt-5.6-luna", &["low", "medium", "high", "xhigh", "max"]),
-            ("gpt-5.5", &[] as &[&str]),
         ];
 
         for (alias, efforts) in expected {

@@ -378,16 +378,13 @@ fn preserves_selected_output(
     let Some(config_snapshot) = generated.get(&path_key(&config)) else {
         return false;
     };
-    let Some(catalog_snapshot) = generated.get(&path_key(&catalog)) else {
-        return false;
-    };
-
-    let (Ok(current_catalog), Ok(generated_catalog)) =
-        (fs::read(&catalog), fs::read(catalog_snapshot))
-    else {
-        return false;
-    };
-    if current_catalog != generated_catalog {
+    // JSON generated snapshots contain managed fields only; transaction
+    // expectations include preserved user fields and describe the actual write.
+    if !transaction
+        .files
+        .iter()
+        .any(|file| file.path == catalog && file_matches_expected(file))
+    {
         return false;
     }
 
@@ -399,17 +396,11 @@ fn preserves_selected_output(
         return false;
     }
 
-    if !transaction
-        .selected_codex_integrations
-        .contains(&Integration::CodexDesktop)
-    {
-        return true;
-    }
-    let providers = home.join("desktop-model-providers.json");
-    let Some(providers_snapshot) = generated.get(&path_key(&providers)) else {
-        return false;
-    };
-    fs::read(&providers).ok().as_deref() == fs::read(providers_snapshot).ok().as_deref()
+    transaction
+        .files
+        .iter()
+        .filter(|file| file.path != config)
+        .all(file_matches_expected)
 }
 
 fn cleanup_codex_transaction(transaction: &CodexTransaction) -> Result<()> {

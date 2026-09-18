@@ -5,7 +5,7 @@ mod keyring;
 mod state;
 mod ui;
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use directories::BaseDirs;
 use std::{fs, io::Write};
 
@@ -14,9 +14,9 @@ use self::{integration::Integration, state::State};
 pub(super) const BASE_URL: &str = "https://agent.auranion.com/v1";
 
 pub(super) fn codex_desktop_routes() -> impl Iterator<Item = (&'static str, &'static str)> {
-    crate::catalog::CODEX_MODELS
+    crate::catalog::CODEX_DESKTOP_MODELS
         .iter()
-        .map(|model| (model.codex_desktop_alias, model.upstream))
+        .map(|&id| (id, id))
 }
 
 fn non_codex_targets(wanted: &[Integration]) -> Vec<Integration> {
@@ -28,7 +28,7 @@ fn non_codex_targets(wanted: &[Integration]) -> Vec<Integration> {
 }
 
 fn requires_key_for_wanted(wanted: &[Integration]) -> bool {
-    wanted.iter().any(|integration| !integration.is_codex())
+    !wanted.is_empty()
 }
 
 pub(super) fn configure() -> Result<()> {
@@ -82,30 +82,77 @@ pub(super) fn configure() -> Result<()> {
     Ok(())
 }
 
-pub(crate) fn config_apply_saved() -> Result<()> {
-    apply_saved()
-}
-
 pub(super) fn apply_saved() -> Result<()> {
     let dirs = BaseDirs::new().context("cannot determine user directories")?;
     let data_dir = dirs.data_local_dir().join("auranion");
     fs::create_dir_all(&data_dir)?;
     let mut state = load_state(&data_dir)?;
     if state.active.is_empty() {
-        anyhow::bail!("no saved integrations; run `auranion config` first");
+        println!("No saved integrations; nothing to reapply.");
+        return Ok(());
     }
-    let api_key = keyring::load()?.context("secure credential unavailable")?;
+
     let wanted = state.active.clone();
-    for integration in non_codex_targets(&wanted) {
-        adapters::select(integration, &dirs, &data_dir, &mut state, &api_key)?;
-    }
+    let api_key = keyring::load();
+    reapply_integrations(&wanted, |integration| {
+        let result = if integration.is_codex() {
+            adapters::reconcile_codex(
+                &dirs,
+                &data_dir,
+                &mut state,
+                &wanted,
+                api_key.as_ref().ok().and_then(|key| key.as_deref()),
+            )
+        } else {
+            match &api_key {
+                Ok(Some(key)) => adapters::select(integration, &dirs, &data_dir, &mut state, key),
+                Ok(None) => Err(anyhow::anyhow!(
+                    "secure credential missing; run `auranion config`"
+                )),
+                Err(error) => Err(anyhow::anyhow!("secure credential unavailable: {error:#}")),
+            }
+        };
+        // Persist backups even after a partial adapter failure, before continuing.
+        state.save(&data_dir)?;
+        state.complete_codex_transaction()?;
+        state.save(&data_dir)?;
+        result
+    })?;
     if wanted.iter().any(|integration| integration.is_codex()) {
-        adapters::reconcile_codex(&dirs, &data_dir, &mut state, &wanted, Some(&api_key))?;
+        api_key?.context(
+            "Codex config refreshed, but secure credential missing; run `auranion config`",
+        )?;
     }
-    state.save(&data_dir)?;
-    state.complete_codex_transaction()?;
-    state.save(&data_dir)?;
     println!("Saved integrations reapplied. Run `auranion status` for diagnostics.");
+    Ok(())
+}
+
+fn reapply_integrations(
+    wanted: &[Integration],
+    mut apply: impl FnMut(Integration) -> Result<()>,
+) -> Result<()> {
+    let mut errors = Vec::new();
+    // Codex shares files and a transaction; reconcile both selections once, last.
+    for &integration in wanted
+        .iter()
+        .filter(|integration| !integration.is_codex())
+        .chain(wanted.iter().find(|integration| integration.is_codex()))
+    {
+        if let Err(error) = apply(integration) {
+            let label = if integration.is_codex() {
+                "Codex"
+            } else {
+                integration.label()
+            };
+            errors.push(format!("{label}: {error:#}"));
+        }
+    }
+    if !errors.is_empty() {
+        bail!(
+            "Failed to reapply saved integrations:\n{}",
+            errors.join("\n")
+        );
+    }
     Ok(())
 }
 
@@ -153,7 +200,7 @@ pub(super) fn status() -> Result<()> {
         let details = if report.is_empty() {
             String::new()
         } else {
-            format!(" â€” {}", report.join(", "))
+            format!(" — {}", report.join(", "))
         };
         println!(
             "  {}: {}{}",
@@ -162,9 +209,9 @@ pub(super) fn status() -> Result<()> {
             details
         );
         if active && integration == Integration::CodexDesktop {
-            println!("    App alias â†’ Auranion target");
+            println!("    App alias → Auranion target");
             for (alias, target) in codex_desktop_routes() {
-                println!("      {alias} â†’ {target}");
+                println!("      {alias} → {target}");
             }
         }
     }
@@ -239,95 +286,71 @@ mod tests {
                 ("gpt-5.6-sol", "gpt-5.6-sol"),
                 ("gpt-5.6-terra", "gpt-5.6-terra"),
                 ("gpt-5.6-luna", "gpt-5.6-luna"),
-                ("gpt-5.5", "gpt-5.5"),
             ]
         );
     }
 
-    /// Regression: refreshing an already-enabled integration must not require
-    /// toggling it off/on. Re-applying the same set of `wanted` integrations
-    /// (as in `auranion config` with no changes, `config --apply`, or
-    /// `auranion update`) must re-merge every active non-Codex target so new
-    /// catalog entries reach the config without a deselect/select cycle.
-    /// Previously `configure()` gated the merge on `needs_selection`, so
-    /// unchanged non-Codex integrations were skipped on Linux.
     #[test]
-    fn reapply_without_toggle_still_updates_every_non_codex_integration() {
-        use crate::config::{io::read_json, io::write_json};
-        use serde_json::json;
-
-        let dir = std::env::temp_dir().join(format!("auranion-reapply-{}", std::process::id()));
-        let _ = std::fs::remove_dir_all(&dir);
-        std::fs::create_dir_all(&dir).unwrap();
-        let settings = dir.join("settings.json");
-        let data_dir = dir.join("data");
-        std::fs::create_dir_all(&data_dir).unwrap();
-
-        std::fs::write(
-            &settings,
-            r#"{"env":{"ANTHROPIC_BASE_URL":"old","ANTHROPIC_API_KEY":"old","ANTHROPIC_MODEL":"stale"}}"#,
-        )
-        .unwrap();
-
-        let mut state = crate::config::state::State::default();
-        state.active = vec![Integration::ClaudeCode];
-        state.backup(&data_dir, &settings).unwrap();
-
-        let mut v = read_json(&settings).unwrap();
-        v["env"]["ANTHROPIC_BASE_URL"] = json!("old");
-        write_json(&settings, &v).unwrap();
-
-        write_json(
-            &settings,
-            &json!({"env": {"ANTHROPIC_MODEL": crate::catalog::DEFAULT_MODEL}}),
-        )
-        .ok();
-
-        let wanted = vec![Integration::ClaudeCode];
-        let targets = non_codex_targets(&wanted);
-        assert_eq!(targets, vec![Integration::ClaudeCode]);
-        assert!(
-            targets.contains(&Integration::ClaudeCode),
-            "unchanged active integrations must still be re-merged — toggling off/on must not be required"
-        );
-        assert!(
-            !targets.contains(&Integration::CodexDesktop),
-            "codex variant handled separately by reconcile"
-        );
-
-        write_json(
-            &settings,
-            &json!({
-                "env": {
-                    "ANTHROPIC_BASE_URL": crate::config::BASE_URL,
-                    "ANTHROPIC_API_KEY": "new-key",
-                    "ANTHROPIC_MODEL": crate::catalog::DEFAULT_MODEL,
-                    "ANTHROPIC_DEFAULT_FABLE_MODEL": crate::catalog::FABLE_MODEL,
+    fn reapply_attempts_every_enabled_integration_even_after_errors() {
+        let mut state = State::default();
+        state.active = Integration::ALL.to_vec();
+        for _ in 0..2 {
+            let mut attempted = Vec::new();
+            let error = reapply_integrations(&state.active, |integration| {
+                attempted.push(integration);
+                if matches!(
+                    integration,
+                    Integration::ClaudeDesktop | Integration::OpenCode
+                ) {
+                    bail!("cannot patch config");
                 }
-            }),
-        )
-        .unwrap();
-        let after = read_json(&settings).unwrap();
-        assert_eq!(
-            after["env"]["ANTHROPIC_MODEL"],
-            json!(crate::catalog::DEFAULT_MODEL)
-        );
-        assert_eq!(after["env"]["ANTHROPIC_API_KEY"], json!("new-key"));
-
-        let _ = std::fs::remove_dir_all(&dir);
+                Ok(())
+            })
+            .unwrap_err();
+            assert_eq!(
+                attempted,
+                vec![
+                    Integration::ClaudeDesktop,
+                    Integration::ClaudeCode,
+                    Integration::OpenCode,
+                    Integration::Hermes,
+                    Integration::CodexDesktop,
+                ]
+            );
+            let message = error.to_string();
+            assert!(message.contains("Claude Desktop: cannot patch config"));
+            assert!(message.contains("OpenCode: cannot patch config"));
+        }
     }
 
     #[test]
-    fn requires_key_only_when_a_non_codex_integration_is_wanted() {
+    fn reapply_leaves_disabled_integrations_alone() {
+        for wanted in [
+            vec![],
+            vec![Integration::CodexCli],
+            vec![Integration::Hermes],
+        ] {
+            let mut attempted = Vec::new();
+            reapply_integrations(&wanted, |integration| {
+                attempted.push(integration);
+                Ok(())
+            })
+            .unwrap();
+            assert_eq!(attempted, wanted);
+        }
+    }
+
+    #[test]
+    fn every_enabled_integration_requires_gateway_credentials() {
         assert!(requires_key_for_wanted(&[Integration::ClaudeCode]));
         assert!(requires_key_for_wanted(&[Integration::OpenCode]));
         assert!(requires_key_for_wanted(&[
             Integration::ClaudeCode,
             Integration::CodexDesktop
         ]));
-        assert!(!requires_key_for_wanted(&[Integration::CodexDesktop]));
-        assert!(!requires_key_for_wanted(&[Integration::CodexCli]));
-        assert!(!requires_key_for_wanted(&[
+        assert!(requires_key_for_wanted(&[Integration::CodexDesktop]));
+        assert!(requires_key_for_wanted(&[Integration::CodexCli]));
+        assert!(requires_key_for_wanted(&[
             Integration::CodexDesktop,
             Integration::CodexCli
         ]));

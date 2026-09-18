@@ -3,7 +3,15 @@ use directories::BaseDirs;
 use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
 
-use crate::catalog::{DEFAULT_MODEL, FABLE_MODEL, HAIKU_MODEL, OPUS_MODEL, SONNET_MODEL};
+use crate::catalog::{CLAUDE_DESKTOP_MODELS, FABLE_MODEL, HAIKU_MODEL, OPUS_MODEL, SONNET_MODEL};
+
+const DEFAULT_MODEL: &str = FABLE_MODEL;
+const ROOT_KEYS: [&str; 4] = [
+    "model",
+    "modelPicker",
+    "availableModels",
+    "enforceAvailableModels",
+];
 
 use super::super::{
     BASE_URL,
@@ -50,7 +58,15 @@ pub(super) fn select(
 pub(super) fn deselect(dirs: &BaseDirs, state: &mut State) -> Result<()> {
     let path = settings_path(dirs);
     restore_json_fields(&path, state, |current, original| {
-        restore_object_keys(current, original, "env", &ENV_KEYS)
+        restore_object_keys(current, original, "env", &ENV_KEYS)?;
+        for key in ROOT_KEYS {
+            if let Some(value) = original.get(key) {
+                current[key] = value.clone();
+            } else if let Some(root) = current.as_object_mut() {
+                root.remove(key);
+            }
+        }
+        Ok(())
     })?;
     Ok(())
 }
@@ -61,9 +77,23 @@ fn settings_path(dirs: &BaseDirs) -> PathBuf {
 
 fn merge(path: &Path, api_key: &str) -> Result<()> {
     let mut settings = read_json(path)?;
-    let environment = json_object_mut(&mut settings, "Claude Code settings root")?
-        .entry("env")
-        .or_insert_with(|| json!({}));
+    let root = json_object_mut(&mut settings, "Claude Code settings root")?;
+    root.insert("model".into(), json!(DEFAULT_MODEL));
+    root.insert(
+        "availableModels".into(),
+        json!(
+            CLAUDE_DESKTOP_MODELS
+                .iter()
+                .map(|&(id, _)| id)
+                .collect::<Vec<_>>()
+        ),
+    );
+    root.insert("enforceAvailableModels".into(), json!(true));
+    root.insert("modelPicker".into(), json!({
+        "replaceBuiltInOptions": true,
+        "options": CLAUDE_DESKTOP_MODELS.iter().map(|&(model, label)| json!({"model": model, "label": label})).collect::<Vec<_>>()
+    }));
+    let environment = root.entry("env").or_insert_with(|| json!({}));
     let environment = json_object_mut(environment, "Claude Code settings env")?;
     let catalog = model_catalog_description();
     let values = [
@@ -87,9 +117,9 @@ fn merge(path: &Path, api_key: &str) -> Result<()> {
 }
 
 fn model_catalog_description() -> String {
-    crate::catalog::MODELS
+    CLAUDE_DESKTOP_MODELS
         .iter()
-        .map(|model| format!("{} ({})", model.label, model.upstream))
+        .map(|(id, label)| format!("{label} ({id})"))
         .collect::<Vec<_>>()
         .join("; ")
 }
@@ -104,7 +134,7 @@ mod tests {
             "auranion-claude-code-models-{}.json",
             std::process::id()
         ));
-        std::fs::write(&path, "{}").unwrap();
+        std::fs::write(&path, r#"{"permissions":{"allow":["Read"]},"env":{"USER_SETTING":"keep"},"modelPicker":{"options":[{"model":"old"}]}}"#).unwrap();
 
         merge(&path, "key").unwrap();
         let settings = read_json(&path).unwrap();
@@ -138,6 +168,25 @@ mod tests {
             Some(DEFAULT_MODEL)
         );
 
+        assert_eq!(settings["model"], FABLE_MODEL);
+        assert_eq!(settings["modelPicker"]["replaceBuiltInOptions"], true);
+        let ids = settings["modelPicker"]["options"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|row| row["model"].as_str().unwrap())
+            .collect::<Vec<_>>();
+        assert_eq!(ids, [FABLE_MODEL, OPUS_MODEL, SONNET_MODEL, HAIKU_MODEL]);
+        assert_eq!(settings["availableModels"], json!(ids));
+        assert_eq!(settings["env"]["USER_SETTING"], "keep");
+        assert_eq!(settings["permissions"]["allow"], json!(["Read"]));
+        merge(&path, "key").unwrap();
+        assert_eq!(settings, read_json(&path).unwrap());
+        merge(&path, "new-key").unwrap();
+        assert_eq!(
+            read_json(&path).unwrap()["env"]["ANTHROPIC_API_KEY"],
+            "new-key"
+        );
         std::fs::remove_file(path).unwrap();
     }
 

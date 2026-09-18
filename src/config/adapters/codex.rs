@@ -7,6 +7,8 @@ use std::{
 };
 use toml_edit::{Array, DocumentMut, Item, Table, TableLike, value};
 
+#[cfg(test)]
+use crate::catalog::CODEX_DESKTOP_MODELS;
 use crate::catalog::{CODEX_DEFAULT_MODEL, CODEX_MODELS};
 
 use super::super::{
@@ -19,8 +21,13 @@ use super::super::{
 #[cfg(test)]
 use super::super::io::{write_json, write_toml};
 
-const OWNED_ROOT_KEYS: [&str; 3] = ["model", "model_provider", "model_catalog_json"];
-const CLI_ROOT_KEYS: [&str; 2] = ["model", "model_provider"];
+const OWNED_ROOT_KEYS: [&str; 5] = [
+    "model",
+    "model_provider",
+    "model_catalog_json",
+    "preferred_auth_method",
+    "profile",
+];
 const OWNED_PROVIDER_KEYS: [&str; 8] = [
     "name",
     "base_url",
@@ -32,7 +39,6 @@ const OWNED_PROVIDER_KEYS: [&str; 8] = [
     "supports_websockets",
 ];
 const OWNED_AUTH_KEYS: [&str; 4] = ["command", "args", "timeout_ms", "refresh_interval_ms"];
-const CODEX_REASONING_EFFORTS: [&str; 6] = ["none", "minimal", "low", "medium", "high", "xhigh"];
 const BASE_INSTRUCTIONS: &str =
     "You are Codex, an agent working through the Auranion model gateway.";
 const TOKEN_COMMAND: &str = "provider-token";
@@ -62,13 +68,7 @@ pub(super) fn diagnostics(dirs: &BaseDirs) -> Vec<String> {
 }
 
 pub(super) fn desktop_diagnostics(dirs: &BaseDirs) -> Vec<String> {
-    match codex_home(dirs) {
-        Ok(home) => (!home.join("desktop-model-providers.json").exists())
-            .then_some("Desktop provider map missing".into())
-            .into_iter()
-            .collect(),
-        Err(_) => vec!["CODEX_HOME invalid".into()],
-    }
+    diagnostics(dirs)
 }
 
 pub(super) fn reconcile(
@@ -130,7 +130,7 @@ fn reconcile_at_home(
     let previous = (previous_home != home)
         .then(|| restore_home_plan(previous_home, state, previous_api_key))
         .transpose()?;
-    let target = select_plan(home, state, previous_api_key, desktop, cli)?;
+    let target = select_plan(home, state, previous_api_key)?;
 
     let mut writes = previous.into_iter().flatten().collect::<Vec<_>>();
     writes.extend(target.writes);
@@ -151,22 +151,17 @@ fn reconcile_at_home(
     );
     state.backup(data_dir, &target.config)?;
     state.backup(data_dir, &target.catalog)?;
-    if target.desktop_contents.is_some() || target.restore_desktop_providers {
-        state.backup(data_dir, &target.desktop_providers)?;
-    }
     for write in &writes {
         record_write_expected(state, data_dir, write)?;
     }
     state.record_generated_bytes(data_dir, &target.config, &target.config_contents)?;
-    if let Some(catalog_contents) = &target.catalog_contents {
-        state.record_generated_bytes(data_dir, &target.catalog, catalog_contents)?;
-    }
-    if let Some(desktop_contents) = &target.desktop_contents {
-        state.record_generated_bytes(data_dir, &target.desktop_providers, desktop_contents)?;
-    } else if target.restore_desktop_providers {
-        state.forget_baseline(&target.desktop_providers);
-        state.forget_generated(&target.desktop_providers);
-    }
+    // Ownership snapshots exclude preserved user fields; transaction expectations
+    // above keep the complete bytes for rollback and recovery.
+    state.record_generated_bytes(
+        data_dir,
+        &target.catalog,
+        &target.catalog_generated_contents,
+    )?;
     if previous_home != home {
         forget_restored_home_state(previous_home, state);
     }
@@ -215,21 +210,12 @@ struct FileWrite {
 struct SelectPlan {
     config: PathBuf,
     catalog: PathBuf,
-    desktop_providers: PathBuf,
     config_contents: Vec<u8>,
-    catalog_contents: Option<Vec<u8>>,
-    desktop_contents: Option<Vec<u8>>,
-    restore_desktop_providers: bool,
+    catalog_generated_contents: Vec<u8>,
     writes: Vec<FileWrite>,
 }
 
-fn select_plan(
-    home: &Path,
-    state: &State,
-    previous_api_key: Option<&str>,
-    desktop: bool,
-    cli: bool,
-) -> Result<SelectPlan> {
+fn select_plan(home: &Path, state: &State, previous_api_key: Option<&str>) -> Result<SelectPlan> {
     let config = home.join("config.toml");
     let catalog = home.join("model-catalogs").join("auranion.json");
     let desktop_providers = home.join("desktop-model-providers.json");
@@ -237,45 +223,21 @@ fn select_plan(
     let command = std::env::current_exe().context("locate Auranion executable for Codex auth")?;
     let legacy = legacy_config_document(&config, &desktop_providers, state)?;
     let mut document = legacy.unwrap_or(read_toml(&config)?);
-    if !cli {
-        restore_matching_cli_root_keys(&mut document, &config, state)?;
-    }
-    merge_document(&mut document, &catalog, &command, cli);
+    merge_document(&mut document, &catalog, &command);
     let config_contents = document.to_string().into_bytes();
-    let catalog_contents = serde_json::to_vec_pretty(&catalog_value())?;
-    let preserve_catalog = match state.generated_for(&catalog) {
-        Some(generated) if catalog.exists() => fs::read(&catalog)? != fs::read(generated)?,
-        _ => false,
-    };
-    let catalog_contents = (!preserve_catalog).then_some(catalog_contents);
-    let preserve_desktop_providers = match state.generated_for(&desktop_providers) {
-        Some(generated) if desktop_providers.exists() => {
-            fs::read(&desktop_providers)? != fs::read(generated)?
-        }
-        _ => false,
-    };
-    let desktop_contents = (desktop && !preserve_desktop_providers)
-        .then(|| serde_json::to_vec_pretty(&desktop_providers_value()))
-        .transpose()?;
-    let restore_desktop_providers = !desktop && state.generated_for(&desktop_providers).is_some();
-    let mut writes = vec![FileWrite {
-        path: config.clone(),
-        contents: Some(config_contents.clone()),
-    }];
-    if let Some(catalog_contents) = &catalog_contents {
-        writes.push(FileWrite {
+    let catalog_generated_contents = serde_json::to_vec_pretty(&catalog_value())?;
+    let mut writes = vec![
+        FileWrite {
+            path: config.clone(),
+            contents: Some(config_contents.clone()),
+        },
+        FileWrite {
             path: catalog.clone(),
-            contents: Some(catalog_contents.clone()),
-        });
-    }
-    if let Some(desktop_contents) = &desktop_contents {
-        writes.push(FileWrite {
-            path: desktop_providers.clone(),
-            contents: Some(desktop_contents.clone()),
-        });
-    } else if restore_desktop_providers
-        && let Some(write) = restore_generated_file_write(&desktop_providers, state)?
-    {
+            contents: Some(serde_json::to_vec_pretty(&patch_catalog(&catalog, state)?)?),
+        },
+    ];
+    // Stock desktop uses config.toml, not this obsolete provider map.
+    if let Some(write) = restore_generated_file_write(&desktop_providers, state)? {
         writes.push(write);
     }
     if let Some(write) = legacy_auth_write(&auth, &desktop_providers, state, previous_api_key)? {
@@ -284,11 +246,8 @@ fn select_plan(
     Ok(SelectPlan {
         config,
         catalog,
-        desktop_providers,
         config_contents,
-        catalog_contents,
-        desktop_contents,
-        restore_desktop_providers,
+        catalog_generated_contents,
         writes,
     })
 }
@@ -393,13 +352,44 @@ fn restore_file_write(path: &Path, state: &State) -> Result<Option<FileWrite>> {
 }
 
 fn restore_generated_file_write(path: &Path, state: &State) -> Result<Option<FileWrite>> {
-    let Some(generated) = state.generated_for(path) else {
+    let (Some(generated), Some(baseline)) = (state.generated_for(path), state.baseline_for(path))
+    else {
         return Ok(None);
     };
-    if path.exists() && fs::read(path)? == fs::read(generated)? {
+    if !path.exists() {
+        return Ok(None);
+    }
+    let mut current = read_json(path)?;
+    let original = read_json(&baseline)?;
+    restore_matching_json(&mut current, &original, &read_json(&generated)?);
+    if current == original {
         return restore_file_write(path, state);
     }
-    Ok(None)
+    Ok(Some(FileWrite {
+        path: path.to_path_buf(),
+        contents: Some(serde_json::to_vec_pretty(&current)?),
+    }))
+}
+
+fn restore_matching_json(current: &mut Value, original: &Value, expected: &Value) {
+    let (Some(current), Some(expected)) = (current.as_object_mut(), expected.as_object()) else {
+        return;
+    };
+    for (key, expected) in expected {
+        if current.get(key) == Some(expected) {
+            if let Some(original) = original.get(key) {
+                current.insert(key.clone(), original.clone());
+            } else {
+                current.remove(key);
+            }
+        } else if let Some(value) = current.get_mut(key) {
+            // ponytail: edited arrays stay intact; use slug-level restore if needed.
+            restore_matching_json(value, &original[key], expected);
+            if value.as_object().is_some_and(Map::is_empty) && original.get(key).is_none() {
+                current.remove(key);
+            }
+        }
+    }
 }
 
 fn forget_restored_home_state(home: &Path, state: &mut State) {
@@ -446,15 +436,17 @@ fn merge_config(path: &Path, catalog_path: &Path, command: &Path) -> Result<()> 
 #[cfg(test)]
 fn configured_document(path: &Path, catalog_path: &Path, command: &Path) -> Result<DocumentMut> {
     let mut document = read_toml(path)?;
-    merge_document(&mut document, catalog_path, command, true);
+    merge_document(&mut document, catalog_path, command);
     Ok(document)
 }
 
-fn merge_document(document: &mut DocumentMut, catalog_path: &Path, command: &Path, cli: bool) {
-    if cli {
-        document["model"] = CODEX_DEFAULT_MODEL.into();
-        document["model_provider"] = "auranion".into();
-    }
+fn merge_document(document: &mut DocumentMut, catalog_path: &Path, command: &Path) {
+    document["model"] = CODEX_DEFAULT_MODEL.into();
+    document["model_provider"] = "auranion".into();
+    document.remove("preferred_auth_method");
+    // A selected personal profile can override the provider and catalog above.
+    // Keep profile definitions, but use the shared native defaults while enabled.
+    document.remove("profile");
     document["model_catalog_json"] = catalog_path.to_string_lossy().into_owned().into();
 
     let providers = ensure_table(&mut document["model_providers"]);
@@ -488,30 +480,17 @@ fn ensure_table(item: &mut Item) -> &mut Table {
 
 fn catalog_value() -> Value {
     let models = CODEX_MODELS.iter().enumerate().map(|(priority, model)| {
-        let efforts = supported_efforts(model.codex_desktop_reasoning_efforts);
         catalog_entry(
             model,
-            model.codex_desktop_alias,
-            codex_desktop_label(model.codex_desktop_alias),
-            format!("{} via Auranion 9router", model.codex_desktop_alias),
-            &efforts,
+            model.upstream,
+            model.label.into(),
+            format!("{} via Auranion", model.label),
+            model.codex_desktop_reasoning_efforts,
             "list",
             priority,
         )
     });
     json!({ "models": models.collect::<Vec<_>>() })
-}
-
-/// The codex CLI parses the same `auranion.json` catalog for both the desktop
-/// and CLI model lists, and its enum only accepts these levels. Catalog
-/// entries must never emit `max`/`ultra`, or the whole file fails to parse
-/// (`unknown variant 'max'`).
-fn supported_efforts<'a>(efforts: &'a [&'a str]) -> Vec<&'a str> {
-    efforts
-        .iter()
-        .copied()
-        .filter(|effort| CODEX_REASONING_EFFORTS.contains(effort))
-        .collect()
 }
 
 fn catalog_entry(
@@ -563,18 +542,75 @@ fn catalog_entry(
     entry
 }
 
-fn codex_desktop_label(alias: &str) -> String {
-    alias
-        .split('-')
-        .map(|part| {
-            let mut chars = part.chars();
-            match chars.next() {
-                Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
-                None => String::new(),
+fn patch_catalog(path: &Path, state: &State) -> Result<Value> {
+    let mut current = read_json(path)?;
+    let root = current
+        .as_object_mut()
+        .context("Codex model catalog root must be a JSON object")?;
+    let canonical_models = catalog_value()["models"]
+        .as_array()
+        .cloned()
+        .context("generated Codex model catalog has no models array")?;
+    let previous_models = state
+        .generated_for(path)
+        .filter(|snapshot| snapshot.exists())
+        .map(|snapshot| read_json(&snapshot))
+        .transpose()?
+        .and_then(|value| value.get("models").and_then(Value::as_array).cloned())
+        .unwrap_or_default();
+    let managed_slugs = previous_models
+        .iter()
+        .filter_map(|entry| entry.get("slug").and_then(Value::as_str))
+        .chain(CODEX_MODELS.iter().map(|model| model.codex_desktop_alias))
+        .chain(["gpt-5.5"])
+        .collect::<Vec<_>>();
+    let models = root
+        .entry("models")
+        .or_insert_with(|| Value::Array(Vec::new()));
+    let models = models
+        .as_array_mut()
+        .context("Codex model catalog `models` must be an array")?;
+    let existing = std::mem::take(models);
+    let mut patched = Vec::with_capacity(canonical_models.len() + existing.len());
+    let mut remaining = existing;
+    for canonical in canonical_models {
+        let slug = canonical.get("slug").and_then(Value::as_str);
+        let Some(index) = slug.and_then(|slug| {
+            remaining
+                .iter()
+                .position(|entry| entry.get("slug").and_then(Value::as_str) == Some(slug))
+        }) else {
+            patched.push(canonical);
+            continue;
+        };
+        let mut entry = remaining.remove(index);
+        if let (Some(existing), Some(canonical)) = (entry.as_object_mut(), canonical.as_object()) {
+            if let Some(previous) = previous_models
+                .iter()
+                .find(|entry| entry.get("slug").and_then(Value::as_str) == slug)
+                .and_then(Value::as_object)
+            {
+                for key in previous.keys().filter(|key| !canonical.contains_key(*key)) {
+                    existing.remove(key);
+                }
             }
-        })
-        .collect::<Vec<_>>()
-        .join(" ")
+            existing.remove("default_reasoning_level");
+            for (key, value) in canonical {
+                existing.insert(key.clone(), value.clone());
+            }
+        } else {
+            entry = canonical;
+        }
+        patched.push(entry);
+    }
+    patched.extend(remaining.into_iter().filter(|entry| {
+        entry
+            .get("slug")
+            .and_then(Value::as_str)
+            .is_none_or(|slug| !managed_slugs.contains(&slug))
+    }));
+    *models = patched;
+    Ok(current)
 }
 
 #[cfg(test)]
@@ -693,28 +729,27 @@ fn is_legacy_profiles(document: &DocumentMut) -> bool {
         return false;
     };
 
-    profiles.iter().count() == CODEX_MODELS.len()
-        && CODEX_MODELS.iter().all(|model| {
-            profiles
-                .get(model.label)
-                .and_then(Item::as_table)
-                .is_some_and(|profile| {
-                    profile.iter().count() == 2
-                        && profile.get("model").and_then(Item::as_str) == Some(model.upstream)
+    matches!(profiles.len(), 4 | 5)
+        && profiles.iter().all(|(label, item)| {
+            let model = CODEX_MODELS
+                .iter()
+                .find(|model| model.label == label)
+                .map(|model| model.upstream)
+                .or_else(|| (label == "GPT 5.5").then_some("gpt-5.5"));
+            model.is_some()
+                && item.as_table().is_some_and(|profile| {
+                    profile.len() == 2
+                        && profile.get("model").and_then(Item::as_str) == model
                         && profile.get("model_provider").and_then(Item::as_str) == Some("auranion")
                 })
         })
 }
 
+#[cfg(test)]
 fn desktop_providers_value() -> Value {
-    let model_providers = CODEX_MODELS
+    let model_providers = CODEX_DESKTOP_MODELS
         .iter()
-        .map(|model| {
-            (
-                model.codex_desktop_alias.to_string(),
-                Value::String("auranion".into()),
-            )
-        })
+        .map(|&id| (id.to_string(), Value::String("auranion".into())))
         .collect::<Map<_, _>>();
     json!({
         "default_provider": "openai",
@@ -802,25 +837,6 @@ fn is_legacy_auranion_auth(auth: &Value, api_key: &str) -> bool {
     auth.len() == 2
         && auth.get("auth_mode").and_then(Value::as_str) == Some("apikey")
         && auth.get("OPENAI_API_KEY").and_then(Value::as_str) == Some(api_key)
-}
-
-fn restore_matching_cli_root_keys(
-    current: &mut DocumentMut,
-    path: &Path,
-    state: &State,
-) -> Result<()> {
-    let (Some(baseline), Some(generated)) = (state.baseline_for(path), state.generated_for(path))
-    else {
-        return Ok(());
-    };
-    let original = read_toml(&baseline)?;
-    let expected = read_toml(&generated)?;
-    for key in CLI_ROOT_KEYS {
-        if same_item(current.get(key), expected.get(key)) {
-            restore_item(current, &original, key);
-        }
-    }
-    Ok(())
 }
 
 fn restore_toml_owned_document(
@@ -1016,13 +1032,7 @@ fn remove_empty_provider(document: &mut DocumentMut) {
 }
 
 fn restore_catalog_write(path: &Path, state: &State) -> Result<Option<FileWrite>> {
-    let Some(generated) = state.generated_for(path) else {
-        return Ok(None);
-    };
-    if path.exists() && fs::read(path)? == fs::read(generated)? {
-        return restore_file_write(path, state);
-    }
-    Ok(None)
+    restore_generated_file_write(path, state)
 }
 
 #[cfg(test)]
@@ -1160,6 +1170,38 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "fixture exporter for tests/codex-native.mjs"]
+    fn export_native_fixture() {
+        let home =
+            PathBuf::from(std::env::var_os("AURANION_TEST_HOME").expect("isolated test home"));
+        fs::create_dir_all(&home).unwrap();
+        fs::write(home.join("config.toml"), "preferred_auth_method = \"chatgpt\"\nprofile = \"personal\"\n[profiles.personal]\nmodel = \"gpt-5.5\"\nmodel_provider = \"openai\"\n").unwrap();
+        let mut state = State::default();
+        reconcile_at_home(
+            &home,
+            &home,
+            &home.join("state"),
+            &mut state,
+            true,
+            false,
+            None,
+        )
+        .unwrap();
+        persist_completed_transaction(&mut state, &home.join("state"));
+        let config = home.join("config.toml");
+        let mut document = read_toml(&config).unwrap();
+        document["model_providers"]["auranion"]["base_url"] =
+            std::env::var("AURANION_TEST_URL").unwrap().into();
+        document["model_providers"]["auranion"]["auth"]["command"] =
+            std::env::var("AURANION_TEST_NODE").unwrap().into();
+        let mut args = Array::new();
+        args.push("-e");
+        args.push("process.stdout.write('fixture-token')");
+        document["model_providers"]["auranion"]["auth"]["args"] = value(args);
+        write_toml(&config, &document).unwrap();
+    }
+
+    #[test]
     fn select_reselect_and_deselect_preserve_user_edits() {
         let dir = test_dir("public-lifecycle");
         let _ = std::fs::remove_dir_all(&dir);
@@ -1267,7 +1309,7 @@ mod tests {
         assert!(recovered.active.contains(&Integration::CodexCli));
         assert_eq!(recovered.codex_home, Some(home));
         assert!(catalog.exists());
-        assert_eq!(desktop_providers_value(), read_json(&providers).unwrap());
+        assert_eq!(json!({"user": true}), read_json(&providers).unwrap());
         persist_completed_transaction(&mut recovered, &dir);
 
         fs::remove_dir_all(&dir).unwrap();
@@ -1293,10 +1335,10 @@ mod tests {
                 .unwrap()
                 .get("model_provider")
                 .and_then(Item::as_str),
-            Some("openai")
+            Some("auranion")
         );
         assert!(catalog.exists());
-        assert_eq!(desktop_providers_value(), read_json(&providers).unwrap());
+        assert_eq!(json!({"user": true}), read_json(&providers).unwrap());
 
         reconcile_at_home(&home, &home, &dir, &mut state, true, true, None).unwrap();
         persist_completed_transaction(&mut state, &dir);
@@ -1307,7 +1349,7 @@ mod tests {
                 .and_then(Item::as_str),
             Some("auranion")
         );
-        assert_eq!(desktop_providers_value(), read_json(&providers).unwrap());
+        assert_eq!(json!({"user": true}), read_json(&providers).unwrap());
 
         reconcile_at_home(&home, &home, &dir, &mut state, false, true, None).unwrap();
         persist_completed_transaction(&mut state, &dir);
@@ -1327,6 +1369,74 @@ mod tests {
         assert_eq!(fs::read_to_string(&providers).unwrap(), "{\"user\":true}");
 
         fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn reapply_repairs_managed_fields_and_removes_obsolete_map() {
+        let dir = test_dir("repair-managed");
+        let _ = fs::remove_dir_all(&dir);
+        let home = dir.join(".codex");
+        fs::create_dir_all(&home).unwrap();
+        let config = home.join("config.toml");
+        let catalog = home.join("model-catalogs/auranion.json");
+        let providers = home.join("desktop-model-providers.json");
+        let auth = home.join("auth.json");
+        let original = "profile = \"personal\"\npreferred_auth_method = \"chatgpt\"\n[profiles.personal]\nmodel = \"user-model\"\nmodel_provider = \"openai\"\n";
+        fs::write(&config, original).unwrap();
+        fs::write(&auth, "{\"tokens\":{\"fixture\":true}}").unwrap();
+        let mut state = State::default();
+        state.backup(&dir, &providers).unwrap();
+        write_json(&providers, &desktop_providers_value()).unwrap();
+        state.record_generated(&dir, &providers).unwrap();
+        let mut map = read_json(&providers).unwrap();
+        map["user"] = json!(true);
+        map["model_providers"]["custom"] = json!("other");
+        write_json(&providers, &map).unwrap();
+        for (desktop, cli) in [(true, false), (false, true), (true, true)] {
+            write_json(
+                &catalog,
+                &json!({"user": true, "models": [
+                    {"slug": "gpt-5.6-luna", "priority": -10},
+                    {"slug": "gpt-6-astra", "display_name": "broken", "extra": "keep"},
+                    {"slug": "gpt-6-astra"}, {"slug": "gpt-5.5"}
+                ]}),
+            )
+            .unwrap();
+            reconcile_at_home(&home, &home, &dir, &mut state, desktop, cli, None).unwrap();
+            persist_completed_transaction(&mut state, &dir);
+            let patched = read_json(&catalog).unwrap();
+            assert_eq!(patched["models"].as_array().unwrap().len(), 4);
+            for (index, &id) in CODEX_DESKTOP_MODELS.iter().enumerate() {
+                assert_eq!(patched["models"][index]["slug"], id);
+                assert_eq!(patched["models"][index]["priority"], index);
+            }
+            assert_eq!(patched["models"][0]["extra"], "keep");
+            assert_eq!(patched["user"], true);
+            assert_eq!(
+                read_json(&providers).unwrap(),
+                json!({"user":true,"model_providers":{"custom":"other"}})
+            );
+            let document = read_toml(&config).unwrap();
+            assert_eq!(document["model_provider"].as_str(), Some("auranion"));
+            assert!(document.get("profile").is_none());
+            assert!(document.get("preferred_auth_method").is_none());
+            assert_eq!(
+                document["profiles"]["personal"]["model"].as_str(),
+                Some("user-model")
+            );
+            assert_eq!(
+                fs::read_to_string(&auth).unwrap(),
+                "{\"tokens\":{\"fixture\":true}}"
+            );
+        }
+        deselect_at_home(&home, &dir, &mut state, None).unwrap();
+        persist_completed_transaction(&mut state, &dir);
+        assert_eq!(
+            read_toml(&config).unwrap()["profile"].as_str(),
+            Some("personal")
+        );
+        assert_eq!(read_json(&providers).unwrap()["user"], true);
+        fs::remove_dir_all(dir).unwrap();
     }
 
     #[test]
@@ -1673,10 +1783,7 @@ mod tests {
             document.get("model_provider").and_then(Item::as_str),
             Some("auranion")
         );
-        assert_eq!(
-            document.get("preferred_auth_method").and_then(Item::as_str),
-            Some("chatgpt")
-        );
+        assert!(document.get("preferred_auth_method").is_none());
         assert_eq!(
             document
                 .get("cli_auth_credentials_store")
@@ -1766,7 +1873,7 @@ mod tests {
                 .iter()
                 .map(|effort| effort["effort"].as_str().unwrap())
                 .collect();
-            let expected_desktop = supported_efforts(model.codex_desktop_reasoning_efforts);
+            let expected_desktop = model.codex_desktop_reasoning_efforts;
             assert_eq!(
                 desktop_efforts, expected_desktop,
                 "desktop catalog entry for {} must only emit levels the codex CLI accepts",
@@ -1774,7 +1881,7 @@ mod tests {
             );
             assert!(expected_desktop.iter().all(|effort| matches!(
                 *effort,
-                "none" | "minimal" | "low" | "medium" | "high" | "xhigh"
+                "low" | "medium" | "high" | "xhigh" | "max" | "ultra"
             )));
         }
         for entry in entries {
@@ -1799,16 +1906,11 @@ mod tests {
         let providers = desktop_providers_value();
         assert_eq!(providers["default_provider"], "openai");
         let routes = providers["model_providers"].as_object().unwrap();
-        assert_eq!(routes.len(), CODEX_MODELS.len());
-        for model in CODEX_MODELS {
-            assert_eq!(
-                routes.get(model.codex_desktop_alias),
-                Some(&Value::String("auranion".into()))
-            );
-            if model.codex_desktop_alias != model.upstream {
-                assert!(!routes.contains_key(model.upstream));
-            }
+        assert_eq!(routes.len(), 4);
+        for &id in CODEX_DESKTOP_MODELS {
+            assert_eq!(routes.get(id), Some(&Value::String("auranion".into())));
         }
+        assert!(!routes.contains_key("gpt-5.5"));
     }
 
     #[test]

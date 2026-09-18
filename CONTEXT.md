@@ -1,116 +1,51 @@
-# Auranion Config — session context
+# Auranion Config — current architecture
 
-Last updated: 2026-08-13
+Updated: 2026-09-18. Package/binary: `auranion`, version 0.3.23.
 
-This document records the durable state, decisions, and verified facts for the `auranion-config` Rust CLI that configures Auranion model routing across Claude Desktop, Claude Code, Codex, ChatGPT/Codex Desktop, and OpenCode.
+## Catalogs
 
-## Project
+- Claude Code and Claude Desktop: Fable 5.1, Opus 5, Sonnet 5, Haiku 4.5, strongest to lightest.
+- Codex CLI and Codex Desktop: GPT 6 Astra, GPT 5.6 Sol, Terra, Luna, strongest to lightest.
+- Model IDs pass unchanged to `https://agent.auranion.com/v1`. Gateway owns upstream routing, pools, fallback, and effort translation. See [COMBOS.md](COMBOS.md).
+- OpenCode and Hermes retain eight general models: `cx/gpt-6-astra`, `cx/gpt-5.6-terra`, `cx/gpt-5.6-luna`, `gcli/grok-4.6`, `cmc/meta/muse-spark-1.3-contributor`, `cmc/z-ai/glm-5.3-flash`, `deepseek/deepseek-v4.1-flash`, `ag/gemini-3.8-flash-tiered`.
 
-- Rust CLI binary: `auranion` (Cargo package `auranion`).
-- Commands: `auranion config` (interactive), `auranion config --apply` (noninteractive reapply), `auranion status`.
-- Dependencies: `anyhow`, `clap`, `crossterm 0.29`, `dialoguer`, `directories`, `keyring`, `ratatui 0.30`, `serde`, `serde_json`, `toml_edit`.
-- Interactive integration picker is Ratatui; saved-key confirm and password entry stay native (Dialoguer).
+## Claude
 
-## Canonical eight models (order is user priority — grouped by family: GPT → Grok → Muse Spark → DeepSeek → Gemini)
+Claude Desktop retains direct third-party gateway config in `Claude-3p/configLibrary/<appliedId>.json`. Static `x-api-key` auth, discovery disabled, four ordered `inferenceModels`, `supports1m: false`. Owned profile metadata survives reapply. No localhost proxy or app modification.
 
-1. `cx/gpt-6-astra` — GPT 6 Astra — context 1M, output 128k, vision
-2. `cx/gpt-5.6-terra` — GPT 5.6 Terra — context 272k, output 128k, vision
-3. `cx/gpt-5.6-luna` — GPT 5.6 Luna — context 272k, output 128k, vision
-4. `gcli/grok-4.6` — Grok 4.6 — context 500k, output 128k, vision
-5. `cmc/meta/muse-spark-1.3-contributor` — Muse Spark 1.3 — context 1M, output 128k, vision/audio/video
-6. `cmc/z-ai/glm-5.3-flash` — GLM 5.3 Flash — context 1M, output 131k, vision/video
-7. `deepseek/deepseek-v4.1-flash` — DeepSeek V4.1 Flash — context 1M, output 384k, vision
-8. `ag/gemini-3.8-flash-tiered` — Gemini 3.8 Flash — context 1M, output 64k, vision/audio/video
+Claude Code writes user settings: ordered `modelPicker` (requires 2.1.242+), four-model allowlist, initial Fable selection, and native role env IDs. Permissions and unrelated settings remain. Higher-priority managed settings can override user config.
 
-Note: ChatGPT / Codex Desktop app shows the default native catalog only — 5 identity-routed models (`CODEX_MODELS`: `gpt-6-astra`, `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`, `gpt-5.5`, default `gpt-6-astra`) per user preference. All other agent tools keep the 8-model `MODELS` catalog.
+## Codex native desktop and CLI
 
-Retired (must never reappear in profiles): Poolside Laguna S 2.1, Poolside Laguna XS 2.1, GLM 5.2, DeepSeek V4 Pro, Qwen 3.7 Plus, Qwen 3.6 Flash, Qwen 3.8 Max, Hermes 4 405B, Claude Opus 5 (`bee/claude-opus-5`).
+Both use shared `CODEX_HOME` and native `model_provider`, `model`, `model_catalog_json` in `config.toml`. Selecting either integration selects Auranion for the shared home. Provider uses Responses HTTP and command authentication via installed `auranion provider-token`; no API key is written to Codex config. `auth.json`/ChatGPT OAuth are not replaced. Legacy auth is restored only when ownership and previous key match.
 
-## Reasoning-effort contracts (API-verified via 9router invalid-value probes; DeepSeek Pro from api-docs.deepseek.com/thinking_mode + Firecrawl)
+Four catalog entries have native effort metadata, medium default, and increasing priorities. Tested backend supports max/ultra; native Ultra sends max upstream. Older enum-based backends may need upgrading.
 
-- GPT 6 Astra / GPT-5.6 Terra / Luna: `none, minimal, low, medium, high, xhigh, max`
-- Gemini 3.8 Flash: `low, medium, high`
-- GLM 5.3 Flash: `low, high, max` (defaults to `max`)
-- DeepSeek V4.1 Flash: `low, high, max` (thinking on by default at `high`; no off-toggle)
-- Muse Spark 1.3: `shortest, low, medium, high, xhigh, max` (`none` returns HTTP 400; `max` rolled out for 1.3 per ai.developer.meta.com/docs/features/reasoning)
-- Grok 4.6: `low, medium, high, xhigh` (default `high`, cannot disable; from docs.x.ai)
+`desktop-model-providers.json` belonged to a patched-app integration, not stock desktop. It is no longer generated. Recorded managed fields are restored/removed, preserving user additions. Deprecated `preferred_auth_method` and active root `profile` selector are removed while enabled; profile definitions remain. Restart desktop and use a new thread after switching providers.
 
-Model-level `max` = "Ultra" picker label. `ultra`/`ultracode` are app-level, never model options.
+This integration targets OpenAI Codex Desktop, not the separate consumer ChatGPT application. No Windows Store app modification is authorized or performed.
 
-## Claude Desktop direct gateway (working, do not regress)
+## Refresh and safety
 
-Config target: `%LOCALAPPDATA%\Claude-3p\configLibrary\<appliedId>.json` with `configLibrary\_meta.json` supplying `appliedId`.
+`config --apply` patches managed values for every enabled integration, even if files changed or toggles did not. Other integrations still run after an adapter failure; command returns aggregated errors. Codex desktop/CLI reconcile once because they share files. Disabled integrations are not enabled implicitly, although their shared Codex home is inherently shared.
 
-Exact contract written by `merge_desktop`:
-- `inferenceProvider`: `gateway`
-- `inferenceCredentialKind`: `static`
-- `inferenceGatewayBaseUrl`: `https://agent.auranion.com/v1`
-- `inferenceGatewayApiKey`: saved Auranion key
-- `inferenceGatewayAuthScheme`: `x-api-key`
-- `modelDiscoveryEnabled`: `false`
-- `inferenceModels`: eight entries `{ name: desktop_alias, labelOverride: desktop_label, supports1m }`
+Original baselines remain immutable. Codex applies transactionally, preserves unrelated config/JSON fields, and records canonical JSON ownership separately from full expected transaction output. Edited JSON arrays are conservatively retained during deselection. Malformed config or filesystem failures are reported rather than overwritten silently.
 
-Removes obsolete `anthropicBaseUrl` / `anthropicApiKey`. No local proxy, supervisor, scheduled task, localhost listener, or certificate.
+`update` retains installed executable path, replaces binary, then launches that binary with `config --apply`. Same-version and failed update attempts also reapply current config. Failures return nonzero. First upgrade from an older updater can still execute old reapply code; run `auranion config --apply` explicitly once afterward.
 
-Claude Desktop picker routes (verified effort mapping):
-- GPT 6 Astra → `claude-opus-4-8`
-- GPT 5.6 Terra → `claude-opus-4-7`
-- GPT 5.6 Luna → `claude-sonnet-4-6`
-- Grok 4.6 → `claude-opus-4-5-20251101`
-- Muse Spark 1.3 → `claude-fable-5`
-- GLM 5.3 Flash → `claude-opus-4-6`
-- DeepSeek V4.1 Flash → `claude-haiku-4-5-20251001`
-- Gemini 3.8 Flash → `claude-sonnet-5`
+## Verification scope
 
-Effort-capable desktop aliases (render Effort control): Claude 5 slots (`claude-fable-5`, `claude-sonnet-5`) and Claude 4 effort-capable slots (`claude-opus-4-8`, `claude-opus-4-7`, `claude-opus-4-6`, `claude-opus-4-5-20251101`, `claude-sonnet-4-6`). Active: Astra (opus-4-8), Terra (opus-4-7), Luna (sonnet-4-6), Grok 4.6 (opus-4-5-20251101), Muse Spark 1.3 (fable-5), GLM 5.3 Flash (opus-4-6), Gemini 3.8 Flash (sonnet-5). DeepSeek routes on `claude-haiku-4-5-20251001` with `forced_effort: Some("max")`.
+- Rust unit/regression tests cover catalog order, reapply, stale entry removal, auth preservation, rollback/recovery, and updater error propagation.
+- `tests/codex-native.mjs` checks generated desktop-only config against installed backend: strict config parsing, provider selection, ordered `model/list`, command auth, and 23 model/effort requests in one thread to a local fixture.
+- Installed version inspected: OpenAI.Codex 26.915.3509.0; backend 0.155.0-alpha.9.
+- Native fixture uses isolated temp config and fake credentials, not user config or live gateway.
+- Actual app UI interactions and live gateway inference are not verified. No installed configs applied, commit, push, or release performed.
 
-Verified end-to-end: `claude-opus-4-8` returns upstream `gpt-6-astra`; `claude-sonnet-4-6` streams SSE HTTP 200.
+## Documentation sources
 
-## Claude Code
+- https://code.claude.com/docs/en/settings-reference#modelpicker
+- https://code.claude.com/docs/en/model-config
+- https://github.com/openai/codex/blob/main/codex-rs/protocol/src/openai_models.rs
+- https://github.com/openai/codex/blob/main/codex-rs/model-provider-info/src/lib.rs
 
-Writes `~/.claude/settings.json` env:
-- `ANTHROPIC_BASE_URL`, `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` (default `cx/gpt-6-astra`)
-- `ANTHROPIC_DEFAULT_FABLE_MODEL` = `cx/gpt-6-astra`, `ANTHROPIC_DEFAULT_OPUS_MODEL` = `cx/gpt-5.6-terra`, `ANTHROPIC_DEFAULT_SONNET_MODEL` = `cx/gpt-5.6-luna`, `ANTHROPIC_DEFAULT_HAIKU_MODEL` = `ag/gemini-3.8-flash-tiered` (raw gateway IDs)
-- Custom model option env describing the eight-model catalog.
-
-## Codex / ChatGPT Desktop
-
-Writes:
-- `~/.codex/config.toml`: sets `model_catalog_json`, `[model_providers.auranion]` (base_url `https://agent.auranion.com/v1`, `wire_api=responses`, auth command `provider-token`). Sets global `model` (`gpt-6-astra`) + `model_provider=auranion` only when Codex CLI is selected; desktop-only leaves CLI root keys untouched. No `agents.subagent`, no `[profiles.*]` — identity routing only.
-- `~/.codex/model-catalogs/auranion.json`: generated catalog with 5 native identity entries (`gpt-6-astra`, `gpt-5.6-sol`, `gpt-5.6-terra`, `gpt-5.6-luna`, `gpt-5.5`). `supported_reasoning_levels` filtered to CLI-parseable levels; `default_reasoning_level=medium` only when the model has efforts. No `default_reasoning_level` for `gpt-5.5`.
-- `~/.codex/desktop-model-providers.json`: `default_provider:"openai"`, `model_providers` mapping the 5 native slugs to `auranion` (desktop only).
-
-Rules:
-- Do NOT set global `model` or `model_provider` for desktop-only; CLI selection sets them to the Codex default.
-- Auranion profiles require Codex API-key mode. Selection replaces `auth.json` with `auth_mode=apikey` and the saved Auranion key; it must not run through signed-in ChatGPT mode.
-- Deselect restores the complete pre-Auranion `auth.json`, including ChatGPT OAuth tokens.
-- Better-Codex-App-Custom-Provider-Support repo (`D:\KEB\finance\old\Better-Codex-App-Custom-Provider-Support`) defines the provider-routing contract. Its app patch is macOS-only; no Windows Store app modification is authorized.
-
-## OpenCode
-
-Writes `~/.config/opencode/opencode.jsonc` (or `%USERPROFILE%\.config\opencode\opencode.jsonc` on Windows). Merges `provider.auranion` JSON with `name: Auranion`, `npm: @ai-sdk/openai-compatible`, `options.baseURL`, and per-model entries with `variants` from the effort contract. GLM has no `variants`; DeepSeek variants are `low`/`high`/`max`.
-
-`merge_opencode` is JSON-based and idempotent. It collapses duplicate `auranion` keys (previous string-merge corrupted the file with 22 stacked blocks; fixed). Auth via `~/.local/share/opencode/auth.json` `auranion` entry.
-
-## Known current state
-
-- Claude Desktop config working exceptionally; all models and effort controls correct. Locked by tests.
-- Codex Desktop picker provider selection still requires the macOS-only Better-Codex app patch; stock Windows Store app ignores `desktop-model-providers.json`.
-- API key was exposed in earlier console output. Rotate Auranion key after confirming.
-
-## Decisions
-
-- D-0031: direct 9router Claude Desktop gateway (supersedes D-0006, D-0030).
-- D-0032: Codex Desktop provider-routing contract.
-- D-0033: Ratatui integration picker.
-- D-0034: per-model reasoning-effort contracts.
-
-Decision records: `docs/stock-intelligence-engine/decisions/00NN-*.md` (project mirror) and the canonical copies under `D:\KEB\finance\docs\stock-intelligence-engine\decisions\`.
-
-## Verification
-
-- `cargo fmt`
-- `cargo test` (91 tests pass)
-- `cargo build --release`
-- `.\target\release\auranion.exe config --apply`
-- `.\target\release\auranion.exe status`
+Installed native app/backend inspection takes precedence over historical patched-app assumptions.

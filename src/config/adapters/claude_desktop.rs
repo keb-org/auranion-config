@@ -6,7 +6,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::catalog::MODELS;
+use crate::catalog::CLAUDE_DESKTOP_MODELS;
 
 use super::super::{
     BASE_URL,
@@ -91,6 +91,12 @@ fn select_at_root(root: &Path, data_dir: &Path, state: &mut State, api_key: &str
     let (profile_path, owned) = resolve_profile_path(root)?;
     let meta_path = metadata_path(root);
     let consumer_config = consumer_config_path(root);
+    let owned = owned
+        || (state.desktop_owned_meta.as_ref() == Some(&meta_path)
+            && profile_path
+                == root
+                    .join("configLibrary")
+                    .join(format!("{OWNED_PROFILE_ID}.json")));
 
     // The verified appliedId flow (a configured app, e.g. the working Windows
     // setup) writes only the profile file. The owned fallback (fresh install
@@ -247,12 +253,12 @@ fn merge(path: &Path, api_key: &str) -> Result<()> {
     object.insert(
         "inferenceModels".into(),
         Value::Array(
-            MODELS
+            CLAUDE_DESKTOP_MODELS
                 .iter()
-                .map(|model| {
+                .map(|(id, label)| {
                     json!({
-                        "name": model.desktop_alias,
-                        "labelOverride": model.desktop_label,
+                        "name": id,
+                        "labelOverride": label,
                         "supports1m": false,
                     })
                 })
@@ -364,19 +370,17 @@ mod tests {
             .get("inferenceModels")
             .and_then(Value::as_array)
             .unwrap();
-        assert_eq!(models.len(), MODELS.len());
-        assert_eq!(
-            models[0].get("name").and_then(Value::as_str),
-            Some("claude-opus-4-8")
-        );
-        assert_eq!(
-            models[5].get("name").and_then(Value::as_str),
-            Some("claude-opus-4-6")
-        );
-        assert_eq!(
-            models[6].get("name").and_then(Value::as_str),
-            Some("claude-haiku-4-5-20251001")
-        );
+        assert_eq!(models.len(), 4);
+        for (model, (id, label)) in models.iter().zip(CLAUDE_DESKTOP_MODELS) {
+            assert_eq!(
+                model,
+                &json!({
+                    "name": id,
+                    "labelOverride": label,
+                    "supports1m": false,
+                })
+            );
+        }
 
         std::fs::remove_dir_all(&dir).unwrap();
     }
@@ -523,7 +527,7 @@ mod tests {
         assert_eq!(config["inferenceProvider"], json!("gateway"));
         assert_eq!(
             config["inferenceModels"].as_array().unwrap().len(),
-            MODELS.len()
+            CLAUDE_DESKTOP_MODELS.len()
         );
         assert_eq!(
             read_json(&metadata_path(&root)).unwrap()["appliedId"],
@@ -533,6 +537,22 @@ mod tests {
             read_json(&consumer_config_path(&root)).unwrap()["deploymentMode"],
             json!("3p")
         );
+
+        write_json(
+            &consumer_config_path(&root),
+            &json!({"deploymentMode": "consumer"}),
+        )
+        .unwrap();
+        select_at_root(&root, &data_dir, &mut state, "refreshed-key").unwrap();
+        assert_eq!(
+            read_json(&profile).unwrap()["inferenceGatewayApiKey"],
+            "refreshed-key"
+        );
+        assert_eq!(
+            read_json(&consumer_config_path(&root)).unwrap()["deploymentMode"],
+            "3p"
+        );
+        assert_eq!(state.desktop_owned_meta, Some(metadata_path(&root)));
 
         deselect(&mut state).unwrap();
 
@@ -719,7 +739,7 @@ mod tests {
                 .and_then(Value::as_array)
                 .unwrap()
                 .len(),
-            MODELS.len()
+            CLAUDE_DESKTOP_MODELS.len()
         );
         let meta = read_json(&metadata_path(&root)).unwrap();
         assert_eq!(
@@ -742,35 +762,52 @@ mod tests {
     }
 
     #[test]
-    fn merge_writes_all_model_desktop_aliases() {
+    fn merge_replaces_old_routes_with_four_server_combo_slots() {
         let dir = temp_root("merge-aliases");
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("cfg.json");
-        std::fs::write(&path, "{}").unwrap();
+        write_json(
+            &path,
+            &json!({
+                "inferenceModels": crate::catalog::MODELS.iter().map(|model| json!({
+                    "name": model.desktop_alias,
+                    "labelOverride": model.desktop_label,
+                    "supports1m": true,
+                })).collect::<Vec<_>>()
+            }),
+        )
+        .unwrap();
         merge(&path, "k").unwrap();
         let cfg = read_json(&path).unwrap();
-        let models = cfg
-            .get("inferenceModels")
-            .and_then(Value::as_array)
-            .unwrap();
-        let names: Vec<_> = models
-            .iter()
-            .filter_map(|m| m.get("name").and_then(Value::as_str))
-            .collect();
-        for expected in [
-            "claude-opus-4-8",
-            "claude-opus-4-7",
-            "claude-opus-4-6",
-            "claude-haiku-4-5-20251001",
-            "claude-sonnet-5",
-            "claude-fable-5",
-        ] {
-            assert!(
-                names.contains(&expected),
-                "missing alias {expected} in {names:?}"
-            );
-        }
+        let models = cfg["inferenceModels"].as_array().unwrap();
+        assert_eq!(
+            models
+                .iter()
+                .map(|m| m["name"].as_str().unwrap())
+                .collect::<Vec<_>>(),
+            [
+                "claude-fable-5-1",
+                "claude-opus-5",
+                "claude-sonnet-5",
+                "claude-haiku-4-5-20251001"
+            ]
+        );
+        assert_eq!(
+            models
+                .iter()
+                .map(|m| m["labelOverride"].as_str().unwrap())
+                .collect::<Vec<_>>(),
+            [
+                "Claude Fable 5.1",
+                "Claude Opus 5",
+                "Claude Sonnet 5",
+                "Claude Haiku 4.5"
+            ]
+        );
+        assert!(models.iter().all(|model| model["supports1m"] == false));
+        merge(&path, "k").unwrap();
+        assert_eq!(read_json(&path).unwrap(), cfg);
         fs::remove_dir_all(&dir).unwrap();
     }
 }
