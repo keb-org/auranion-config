@@ -19,37 +19,12 @@ if (-not (Test-Path $InstallDir)) {
 Write-Host "Downloading Auranion CLI..."
 Invoke-WebRequest -Uri $Asset.browser_download_url -OutFile $ExePath
 
-# Reconcile the persistent User PATH (registry) so `auranion` survives
-# truncation on heavily polluted dev machines: insert at the FRONT so it is
-# never in Windows' ~2047-char User-PATH tail that gets cut from the
-# expanded Machine+User PATH.
+# Add to User PATH if missing
 $UserPath = [Environment]::GetEnvironmentVariable("Path", "User")
-if ([string]::IsNullOrEmpty($UserPath)) {
-    $newUserPath = $InstallDir
-} else {
-    $parts = $UserPath -split ";" | Where-Object { $_ -ne "" } | ForEach-Object { $_.Trim().TrimEnd("\") }
-    $seen = @{}
-    $dedupedNoInstall = @()
-    $normInstall = $InstallDir.TrimEnd("\").ToLower()
-    foreach ($p in $parts) {
-        $k = $p.ToLower()
-        if ($k -eq $normInstall) { continue }
-        if (-not $seen.ContainsKey($k)) { $seen[$k] = $true; $dedupedNoInstall += $p }
-    }
-    $alreadyAtFront = ($parts.Count -gt 0 -and $parts[0].TrimEnd("\").ToLower() -eq $normInstall)
-    $needsWrite = -not $alreadyAtFront -or ($parts.Count -ne $dedupedNoInstall.Count + 1)
-
-    if ($needsWrite) {
-        $newUserPath = (@($InstallDir) + $dedupedNoInstall) -join ";"
-        [Environment]::SetEnvironmentVariable("Path", $newUserPath, "User")
-        $afterLen = $newUserPath.Length
-        Write-Host "Added $InstallDir to PATH (front, deduped $afterLen chars)."
-        if ($afterLen -gt 1900) {
-            Write-Warning "User PATH is $afterLen chars (near Windows truncation). Consider cleaning stale WinGet entries."
-        }
-    } else {
-        Write-Host "$InstallDir already at front of PATH."
-    }
+if ($UserPath -notlike "*$InstallDir*") {
+    $newUserPath = if ([string]::IsNullOrEmpty($UserPath)) { $InstallDir } else { "$UserPath;$InstallDir" }
+    [Environment]::SetEnvironmentVariable("Path", $newUserPath, "User")
+    Write-Host "Added $InstallDir to User PATH."
 }
 
 # Always patch the current process PATH so `auranion` resolves right after

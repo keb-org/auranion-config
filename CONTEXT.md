@@ -1,6 +1,6 @@
 # Auranion Config — current architecture
 
-Updated: 2026-09-18. Package/binary: `auranion`, version 0.3.24.
+Updated: 2026-09-18. Package/binary: `auranion`, version 0.3.25.
 
 ## Catalogs
 
