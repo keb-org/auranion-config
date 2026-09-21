@@ -1,13 +1,13 @@
 # Auranion Config — current architecture
 
-Updated: 2026-09-21. Package/binary: `auranion`, version 0.3.27.
+Updated: 2026-09-21. Package/binary: `auranion`, version 0.3.28.
 
 ## Catalogs
 
 - Claude Code and Claude Desktop: Fable 5.1, Opus 5, Sonnet 5, Haiku 4.5, strongest to lightest.
 - Codex CLI and Codex Desktop: GPT 6 Astra, GPT 5.6 Sol, Terra, Luna, strongest to lightest.
 - Model IDs pass unchanged to the gateway. Claude Code/Desktop receive the origin-only base `https://agent.auranion.com`; Codex/OpenCode/Hermes retain `https://agent.auranion.com/v1`. Gateway owns upstream routing, pools, fallback, and effort translation. See [COMBOS.md](COMBOS.md).
-- OpenCode and Hermes use four stable server-routed tiers, strongest to lightest: `auranion/gigachad`, `auranion/chad`, `auranion/sigma`, `auranion/alpha`. Upstream backends are configured gateway-side; client config never changes when backends swap.
+- OpenCode and Hermes send four bare server-routed tier IDs, strongest to lightest: `gigachad`, `chad`, `sigma`, `alpha`. OpenCode's local provider/model selector remains `auranion/<tier>`; Hermes keeps provider `auranion` separately. Slash-prefixed wire IDs bypass gateway combo resolution. Reapply migrates retired namespaced tier defaults/selectors without changing unrelated providers. Upstream backends remain configured gateway-side. Hermes sets `discover_models: false` so its Auranion picker uses only these four tiers, not the gateway's full catalog. All four tiers advertise a fixed 256,000-token context in OpenCode (`limit.context`) and Hermes (`context_length`), per user request. Output limit is fixed at 64,000 tokens in OpenCode (`limit.output`), per user request; Hermes intentionally sets no output cap (server defaults apply). These client-side settings do not increase backend capacity.
 
 ## Claude
 
@@ -39,7 +39,8 @@ Original baselines remain immutable. Codex applies transactionally, preserves un
 - `tests/codex-native.mjs` checks generated desktop-only config against installed backend: strict config parsing, provider selection, ordered `model/list`, command auth, and 23 model/effort requests in one thread to a local fixture.
 - Installed version inspected: OpenAI.Codex 26.915.3509.0; backend 0.155.0-alpha.9.
 - Native fixture uses isolated temp config and fake credentials, not user config or live gateway.
-- Actual app UI interactions and live gateway inference are not verified. Installed client configs are not changed during verification.
+- Claude/Codex app UI interactions and live inference remain unverified; their installed configs were not changed during tier repair.
+- On 2026-09-21, all four bare OpenCode/Hermes tier IDs returned HTTP 200 with completion choices from the live gateway. Installed Hermes resolved all four through its native provider resolver in an isolated config home. Its native picker inventory also returned exactly these four in order for CLI, picker, refresh, and cached paths with discovery disabled; network/cache hooks were mocked and no credentials were used for that check. Local OpenCode/Hermes configs were backed up and repaired; native UI interactions remain unverified. Existing sessions may require tier reselection after restart.
 
 ## Documentation sources
 

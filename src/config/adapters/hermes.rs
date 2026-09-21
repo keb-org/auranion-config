@@ -82,7 +82,36 @@ fn merge(path: &Path, api_key: &str) -> Result<()> {
     let provider = auranion_provider(api_key);
     upsert_provider(&mut root, provider);
     remove_legacy_custom_providers(&mut root);
+    migrate_tier_default(&mut root);
     write_yaml(path, &root)
+}
+
+fn migrate_tier_default(root: &mut YamlValue) {
+    let Some(model) = root.get_mut("model").and_then(YamlValue::as_mapping_mut) else {
+        return;
+    };
+    let provider = model.get("provider").and_then(YamlValue::as_str);
+    let is_auranion = match provider {
+        Some("auranion" | "Auranion" | "custom:auranion") => true,
+        None | Some("custom" | "auto") => model
+            .get("base_url")
+            .and_then(YamlValue::as_str)
+            .is_some_and(|url| url.trim_end_matches('/') == BASE_URL),
+        _ => false,
+    };
+    if !is_auranion {
+        return;
+    }
+    // ponytail: migrate only retired tier defaults; leave other provider IDs alone.
+    if let Some(default) = model.get_mut("default") {
+        if let Some(tier) = default
+            .as_str()
+            .and_then(|id| id.strip_prefix("auranion/"))
+            .filter(|id| MODELS.iter().any(|model| model.upstream == *id))
+        {
+            *default = YamlValue::String(tier.into());
+        }
+    }
 }
 
 fn remove_provider(path: &Path) -> Result<()> {
@@ -272,6 +301,7 @@ fn auranion_provider(api_key: &str) -> YamlValue {
         YamlValue::String("api_mode".into()),
         YamlValue::String("chat_completions".into()),
     );
+    map.insert("discover_models".into(), YamlValue::Bool(false));
     let mut models = serde_yaml::Mapping::new();
     for model in MODELS {
         let mut meta = serde_yaml::Mapping::new();
@@ -478,6 +508,7 @@ mod tests {
   auranion:
     base_url: https://agent.auranion.com/v1
     api_key: old
+    discover_models: true
     models:
       cx/gpt-6-astra: {}
       deepseek/deepseek-v4.1-flash: {}
@@ -487,6 +518,7 @@ mod tests {
 
         merge(&path, "new-key").unwrap();
         let root = read_yaml(&path).unwrap();
+        assert_eq!(root["providers"]["auranion"]["discover_models"], false);
         let models = root
             .as_mapping()
             .unwrap()
@@ -503,17 +535,60 @@ mod tests {
             .as_mapping()
             .unwrap();
         let keys: Vec<_> = models.keys().filter_map(|k| k.as_str()).collect();
-        assert_eq!(
-            keys,
-            [
-                "auranion/gigachad",
-                "auranion/chad",
-                "auranion/sigma",
-                "auranion/alpha",
-            ]
-        );
+        assert_eq!(keys, ["gigachad", "chad", "sigma", "alpha"]);
+        for metadata in models.values() {
+            assert_eq!(metadata["context_length"].as_u64(), Some(256_000));
+        }
 
         fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn merge_migrates_tier_defaults_only_for_auranion() {
+        let dir = tmp_path("tier-defaults");
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("config.yaml");
+        for (provider, base_url, migrate) in [
+            (Some("auranion"), None, true),
+            (Some("Auranion"), None, true),
+            (Some("custom:auranion"), None, true),
+            (Some("custom"), Some(BASE_URL), true),
+            (Some("auto"), Some("https://agent.auranion.com/v1/"), true),
+            (None, Some(BASE_URL), true),
+            (Some("other"), Some(BASE_URL), false),
+            (Some("custom"), Some("https://other.example.com/v1"), false),
+            (None, None, false),
+        ] {
+            for tier in ["gigachad", "chad", "sigma", "alpha", "private-model"] {
+                let mut root = serde_yaml::to_value(serde_json::json!({
+                    "model": { "default": format!("auranion/{tier}"), "context_length": 32000 },
+                    "display": { "compact": true }
+                }))
+                .unwrap();
+                let model = root["model"].as_mapping_mut().unwrap();
+                if let Some(provider) = provider {
+                    model.insert("provider".into(), provider.into());
+                }
+                if let Some(base_url) = base_url {
+                    model.insert("base_url".into(), base_url.into());
+                }
+                let mut expected = root["model"].clone();
+                if migrate && tier != "private-model" {
+                    expected["default"] = tier.into();
+                }
+                write_yaml(&path, &root).unwrap();
+                merge(&path, "test-key").unwrap();
+                let actual = read_yaml(&path).unwrap();
+                assert_eq!(
+                    actual["model"], expected,
+                    "provider={provider:?}, tier={tier}"
+                );
+                assert_eq!(actual["display"], root["display"]);
+                merge(&path, "test-key").unwrap();
+                assert_eq!(read_yaml(&path).unwrap(), actual);
+            }
+        }
+        fs::remove_dir_all(dir).unwrap();
     }
 
     #[test]

@@ -38,11 +38,12 @@ pub const CODEX_DEFAULT_MODEL: &str = "gpt-6-astra";
 
 // Stable server-routed tiers for OpenCode/Hermes, strongest to lightest.
 // Gateway owns upstream backends, pools, fallback, and effort translation;
-// client config never changes when backends swap.
-pub const GIGACHAD_MODEL: &str = "auranion/gigachad";
-pub const CHAD_MODEL: &str = "auranion/chad";
-pub const SIGMA_MODEL: &str = "auranion/sigma";
-pub const ALPHA_MODEL: &str = "auranion/alpha";
+// client config never changes when backends swap. Combo IDs must be bare:
+// a slash makes the gateway resolve provider credentials instead of a combo.
+pub const GIGACHAD_MODEL: &str = "gigachad";
+pub const CHAD_MODEL: &str = "chad";
+pub const SIGMA_MODEL: &str = "sigma";
+pub const ALPHA_MODEL: &str = "alpha";
 
 // ponytail: fixed desktop slots; change IDs only when app catalogs change.
 // Upstream routing and effort translation belong to agent.auranion.com.
@@ -69,8 +70,8 @@ pub const MODELS: &[Model] = &[
         codex_desktop_alias: "auranion-gigachad",
         codex_desktop_reasoning_efforts: &[],
         score: None,
-        context: None,
-        output: None,
+        context: Some(256_000),
+        output: Some(64_000),
         reasoning: true,
         reasoning_efforts: &[],
         vision: true,
@@ -87,8 +88,8 @@ pub const MODELS: &[Model] = &[
         codex_desktop_alias: "auranion-chad",
         codex_desktop_reasoning_efforts: &[],
         score: None,
-        context: None,
-        output: None,
+        context: Some(256_000),
+        output: Some(64_000),
         reasoning: true,
         reasoning_efforts: &[],
         vision: true,
@@ -105,8 +106,8 @@ pub const MODELS: &[Model] = &[
         codex_desktop_alias: "auranion-sigma",
         codex_desktop_reasoning_efforts: &[],
         score: None,
-        context: None,
-        output: None,
+        context: Some(256_000),
+        output: Some(64_000),
         reasoning: true,
         reasoning_efforts: &[],
         vision: true,
@@ -123,8 +124,8 @@ pub const MODELS: &[Model] = &[
         codex_desktop_alias: "auranion-alpha",
         codex_desktop_reasoning_efforts: &[],
         score: None,
-        context: None,
-        output: None,
+        context: Some(256_000),
+        output: Some(64_000),
         reasoning: true,
         reasoning_efforts: &[],
         vision: true,
@@ -274,20 +275,20 @@ mod tests {
         }
     }
 
-    /// OpenCode/Hermes tiers are server-routed: the gateway owns upstream
-    /// routing, effort translation, limits, and capabilities. Client entries
-    /// carry no local capability assumptions.
     #[test]
-    fn tier_models_are_server_routed_without_local_assumptions() {
+    fn tier_models_use_bare_gateway_combo_ids() {
+        assert_eq!(
+            MODELS
+                .iter()
+                .map(|model| model.upstream)
+                .collect::<Vec<_>>(),
+            ["gigachad", "chad", "sigma", "alpha"]
+        );
         for model in MODELS {
-            assert!(
-                model.upstream.starts_with("auranion/"),
-                "{} must be a server-routed tier id",
-                model.label
-            );
+            assert!(!model.upstream.contains('/'));
             assert!(model.reasoning_efforts.is_empty());
-            assert!(model.context.is_none());
-            assert!(model.output.is_none());
+            assert_eq!(model.context, Some(256_000));
+            assert_eq!(model.output, Some(64_000));
             assert!(model.forced_effort.is_none());
         }
     }

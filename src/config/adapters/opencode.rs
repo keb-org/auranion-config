@@ -92,7 +92,30 @@ fn merge_config(path: &Path) -> Result<()> {
         .or_insert_with(|| json!({}));
     let provider = json_object_mut(provider, "OpenCode provider")?;
     provider.insert("auranion".into(), auranion_provider());
+    for key in ["model", "small_model"] {
+        if let Some(model) = root.get_mut(key) {
+            migrate_tier_selector(model);
+        }
+    }
+    if let Some(agents) = root.get_mut("agent").and_then(Value::as_object_mut) {
+        for agent in agents.values_mut() {
+            if let Some(model) = agent.get_mut("model") {
+                migrate_tier_selector(model);
+            }
+        }
+    }
     write_json(path, &root)
+}
+
+fn migrate_tier_selector(value: &mut Value) {
+    // ponytail: migrate only retired tier selectors; extend for future ID changes.
+    if let Some(tier) = value
+        .as_str()
+        .and_then(|id| id.strip_prefix("auranion/auranion/"))
+        .filter(|id| MODELS.iter().any(|model| model.upstream == *id))
+    {
+        *value = Value::String(format!("auranion/{tier}"));
+    }
 }
 
 fn merge_auth(path: &Path, api_key: &str) -> Result<()> {
@@ -297,7 +320,7 @@ mod tests {
     }
 
     #[test]
-    fn provider_models_match_catalog_with_variants() {
+    fn provider_models_use_bare_gateway_ids_in_tier_order() {
         let dir =
             std::env::temp_dir().join(format!("auranion-opencode-catalog-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
@@ -308,32 +331,15 @@ mod tests {
         let root = read_json(&path).unwrap();
         let models = root["provider"]["auranion"]["models"].as_object().unwrap();
         assert_eq!(models.len(), MODELS.len());
-        // Server-routed tiers carry no local effort variants, limits, or
-        // capability assumptions; the gateway owns routing and translation.
+        // Without an explicit id override, OpenCode sends the map key on the wire.
         let keys: Vec<_> = models.keys().map(String::as_str).collect();
-        assert_eq!(
-            keys,
-            [
-                "auranion/gigachad",
-                "auranion/chad",
-                "auranion/sigma",
-                "auranion/alpha",
-            ]
-        );
-        for key in keys {
+        assert_eq!(keys, ["gigachad", "chad", "sigma", "alpha"]);
+        for (key, label) in keys.into_iter().zip(["Gigachad", "Chad", "Sigma", "Alpha"]) {
             let entry = &models[key];
-            assert_eq!(
-                entry.get("name").and_then(Value::as_str),
-                Some(match key {
-                    "auranion/gigachad" => "Gigachad",
-                    "auranion/chad" => "Chad",
-                    "auranion/sigma" => "Sigma",
-                    "auranion/alpha" => "Alpha",
-                    _ => unreachable!(),
-                })
-            );
+            assert_eq!(entry.get("name").and_then(Value::as_str), Some(label));
+            assert!(entry.get("id").is_none());
             assert!(entry.get("variants").is_none());
-            assert!(entry.get("limit").is_none());
+            assert_eq!(entry["limit"], json!({ "context": 256_000, "output": 64_000 }));
         }
         std::fs::remove_dir_all(&dir).unwrap();
     }
@@ -353,7 +359,8 @@ mod tests {
                         "name": "Auranion",
                         "models": {
                             "cx/gpt-6-astra": { "name": "GPT 6 Astra" },
-                            "deepseek/deepseek-v4.1-flash": { "name": "DeepSeek V4.1 Flash" }
+                            "deepseek/deepseek-v4.1-flash": { "name": "DeepSeek V4.1 Flash" },
+                            "auranion/chad": { "name": "Chad" }
                         }
                     }
                 }
@@ -366,6 +373,47 @@ mod tests {
         assert_eq!(models.len(), MODELS.len());
         assert!(!models.contains_key("cx/gpt-6-astra"));
         assert!(!models.contains_key("deepseek/deepseek-v4.1-flash"));
+        assert!(!models.contains_key("auranion/chad"));
         std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn merge_migrates_only_retired_tier_selectors() {
+        let path = std::env::temp_dir().join(format!(
+            "auranion-opencode-tier-selectors-{}.json",
+            std::process::id()
+        ));
+        for tier in ["gigachad", "chad", "sigma", "alpha"] {
+            let retired = format!("auranion/auranion/{tier}");
+            let selected = format!("auranion/{tier}");
+            write_json(
+                &path,
+                &json!({
+                    "model": retired,
+                    "small_model": retired,
+                    "agent": {
+                        "build": { "model": retired },
+                        "other": { "model": "other/auranion/chad" },
+                        "current": { "model": selected },
+                        "unknown": { "model": "auranion/auranion/private-model" }
+                    }
+                }),
+            )
+            .unwrap();
+            merge_config(&path).unwrap();
+            let root = read_json(&path).unwrap();
+            assert_eq!(root["model"], selected);
+            assert_eq!(root["small_model"], selected);
+            assert_eq!(root["agent"]["build"]["model"], selected);
+            assert_eq!(root["agent"]["other"]["model"], "other/auranion/chad");
+            assert_eq!(root["agent"]["current"]["model"], selected);
+            assert_eq!(
+                root["agent"]["unknown"]["model"],
+                "auranion/auranion/private-model"
+            );
+            merge_config(&path).unwrap();
+            assert_eq!(read_json(&path).unwrap(), root);
+        }
+        std::fs::remove_file(path).unwrap();
     }
 }
