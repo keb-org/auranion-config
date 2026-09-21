@@ -1,13 +1,13 @@
 # Auranion Config — current architecture
 
-Updated: 2026-09-18. Package/binary: `auranion`, version 0.3.25.
+Updated: 2026-09-21. Package/binary: `auranion`, version 0.3.27.
 
 ## Catalogs
 
 - Claude Code and Claude Desktop: Fable 5.1, Opus 5, Sonnet 5, Haiku 4.5, strongest to lightest.
 - Codex CLI and Codex Desktop: GPT 6 Astra, GPT 5.6 Sol, Terra, Luna, strongest to lightest.
 - Model IDs pass unchanged to the gateway. Claude Code/Desktop receive the origin-only base `https://agent.auranion.com`; Codex/OpenCode/Hermes retain `https://agent.auranion.com/v1`. Gateway owns upstream routing, pools, fallback, and effort translation. See [COMBOS.md](COMBOS.md).
-- OpenCode and Hermes retain eight general models: `cx/gpt-6-astra`, `cx/gpt-5.6-terra`, `cx/gpt-5.6-luna`, `gcli/grok-4.6`, `cmc/meta/muse-spark-1.3-contributor`, `cmc/z-ai/glm-5.3-flash`, `deepseek/deepseek-v4.1-flash`, `ag/gemini-3.8-flash-tiered`.
+- OpenCode and Hermes use four stable server-routed tiers, strongest to lightest: `auranion/gigachad`, `auranion/chad`, `auranion/sigma`, `auranion/alpha`. Upstream backends are configured gateway-side; client config never changes when backends swap.
 
 ## Claude
 

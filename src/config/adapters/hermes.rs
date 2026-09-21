@@ -467,6 +467,56 @@ mod tests {
     }
 
     #[test]
+    fn merge_replaces_retired_upstream_ids_with_tiers() {
+        let dir = tmp_path("retired");
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("config.yaml");
+        fs::write(
+            &path,
+            r#"providers:
+  auranion:
+    base_url: https://agent.auranion.com/v1
+    api_key: old
+    models:
+      cx/gpt-6-astra: {}
+      deepseek/deepseek-v4.1-flash: {}
+"#,
+        )
+        .unwrap();
+
+        merge(&path, "new-key").unwrap();
+        let root = read_yaml(&path).unwrap();
+        let models = root
+            .as_mapping()
+            .unwrap()
+            .get(YamlValue::String("providers".into()))
+            .unwrap()
+            .as_mapping()
+            .unwrap()
+            .get(YamlValue::String(PROVIDER_KEY.into()))
+            .unwrap()
+            .as_mapping()
+            .unwrap()
+            .get(YamlValue::String("models".into()))
+            .unwrap()
+            .as_mapping()
+            .unwrap();
+        let keys: Vec<_> = models.keys().filter_map(|k| k.as_str()).collect();
+        assert_eq!(
+            keys,
+            [
+                "auranion/gigachad",
+                "auranion/chad",
+                "auranion/sigma",
+                "auranion/alpha",
+            ]
+        );
+
+        fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
     fn merge_rejects_non_mapping_root() {
         let dir = tmp_path("non-mapping");
         let _ = fs::remove_dir_all(&dir);

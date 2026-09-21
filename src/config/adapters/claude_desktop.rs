@@ -769,12 +769,24 @@ mod tests {
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("cfg.json");
+        // Retired per-model routes from the pre-tier era; merge must replace
+        // whatever stale content is present with the four server combo slots.
+        let retired = [
+            "claude-opus-4-8",
+            "claude-opus-4-7",
+            "claude-sonnet-4-6",
+            "claude-opus-4-5-20251101",
+            "claude-fable-5",
+            "claude-opus-4-6",
+            "claude-haiku-4-5-20251001",
+            "claude-sonnet-5",
+        ];
         write_json(
             &path,
             &json!({
-                "inferenceModels": crate::catalog::MODELS.iter().map(|model| json!({
-                    "name": model.desktop_alias,
-                    "labelOverride": model.desktop_label,
+                "inferenceModels": retired.iter().map(|alias| json!({
+                    "name": alias,
+                    "labelOverride": alias,
                     "supports1m": true,
                 })).collect::<Vec<_>>()
             }),

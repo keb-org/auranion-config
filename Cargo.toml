@@ -1,6 +1,6 @@
 [package]
 name = "auranion"
-version = "0.3.25"
+version = "0.3.27"
 edition = "2024"
 
 [dependencies]
@@ -12,7 +12,7 @@ directories = "6"
 keyring = "4.1"
 ratatui = "0.30"
 serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde_json = { version = "1", features = ["preserve_order"] }
 serde_yaml = "0.9"
 self-replace = "1.5.0"
 toml_edit = "0.25"

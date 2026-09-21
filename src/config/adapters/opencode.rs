@@ -308,13 +308,64 @@ mod tests {
         let root = read_json(&path).unwrap();
         let models = root["provider"]["auranion"]["models"].as_object().unwrap();
         assert_eq!(models.len(), MODELS.len());
-        let glm = &models["cmc/z-ai/glm-5.3-flash"];
-        let glm_variants = glm.get("variants").and_then(|v| v.as_object()).unwrap();
-        assert!(glm_variants.contains_key("low") && glm_variants.contains_key("max"));
-        // DeepSeek has low/high/max only
-        let ds = &models["deepseek/deepseek-v4.1-flash"];
-        let variants = ds.get("variants").and_then(|v| v.as_object()).unwrap();
-        assert!(variants.contains_key("low") && variants.contains_key("max"));
+        // Server-routed tiers carry no local effort variants, limits, or
+        // capability assumptions; the gateway owns routing and translation.
+        let keys: Vec<_> = models.keys().map(String::as_str).collect();
+        assert_eq!(
+            keys,
+            [
+                "auranion/gigachad",
+                "auranion/chad",
+                "auranion/sigma",
+                "auranion/alpha",
+            ]
+        );
+        for key in keys {
+            let entry = &models[key];
+            assert_eq!(
+                entry.get("name").and_then(Value::as_str),
+                Some(match key {
+                    "auranion/gigachad" => "Gigachad",
+                    "auranion/chad" => "Chad",
+                    "auranion/sigma" => "Sigma",
+                    "auranion/alpha" => "Alpha",
+                    _ => unreachable!(),
+                })
+            );
+            assert!(entry.get("variants").is_none());
+            assert!(entry.get("limit").is_none());
+        }
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn merge_replaces_retired_upstream_ids_with_tiers() {
+        let dir =
+            std::env::temp_dir().join(format!("auranion-opencode-retired-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("opencode.jsonc");
+        std::fs::write(
+            &path,
+            r#"{
+                "provider": {
+                    "auranion": {
+                        "name": "Auranion",
+                        "models": {
+                            "cx/gpt-6-astra": { "name": "GPT 6 Astra" },
+                            "deepseek/deepseek-v4.1-flash": { "name": "DeepSeek V4.1 Flash" }
+                        }
+                    }
+                }
+            }"#,
+        )
+        .unwrap();
+        merge_config(&path).unwrap();
+        let root = read_json(&path).unwrap();
+        let models = root["provider"]["auranion"]["models"].as_object().unwrap();
+        assert_eq!(models.len(), MODELS.len());
+        assert!(!models.contains_key("cx/gpt-6-astra"));
+        assert!(!models.contains_key("deepseek/deepseek-v4.1-flash"));
         std::fs::remove_dir_all(&dir).unwrap();
     }
 }
