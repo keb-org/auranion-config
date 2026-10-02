@@ -1,11 +1,11 @@
 # Auranion Config — current architecture
 
-Updated: 2026-09-21. Package/binary: `auranion`, version 0.3.28.
+Updated: 2026-09-24. Package/binary: `auranion`, version 0.3.28. Auto-update changes are local/unreleased.
 
 ## Catalogs
 
-- Claude Code and Claude Desktop: Fable 5.1, Opus 5, Sonnet 5, Haiku 4.5, strongest to lightest.
-- Codex CLI and Codex Desktop: GPT 6 Astra, GPT 5.6 Sol, Terra, Luna, strongest to lightest.
+- Claude Code and Claude Desktop: Fable 5.1, Opus 5.5, Sonnet 5.5, Haiku 4.5, strongest to lightest.
+- Codex CLI and Codex Desktop: GPT 6 Astra, GPT 6 Sol, Terra, Luna, strongest to lightest.
 - Model IDs pass unchanged to the gateway. Claude Code/Desktop receive the origin-only base `https://agent.auranion.com`; Codex/OpenCode/Hermes retain `https://agent.auranion.com/v1`. Gateway owns upstream routing, pools, fallback, and effort translation. See [COMBOS.md](COMBOS.md).
 - OpenCode and Hermes send four bare server-routed tier IDs, strongest to lightest: `gigachad`, `chad`, `sigma`, `alpha`. OpenCode's local provider/model selector remains `auranion/<tier>`; Hermes keeps provider `auranion` separately. Slash-prefixed wire IDs bypass gateway combo resolution. Reapply migrates retired namespaced tier defaults/selectors without changing unrelated providers. Upstream backends remain configured gateway-side. Hermes sets `discover_models: false` so its Auranion picker uses only these four tiers, not the gateway's full catalog. All four tiers advertise a fixed 256,000-token context in OpenCode (`limit.context`) and Hermes (`context_length`), per user request. Output limit is fixed at 64,000 tokens in OpenCode (`limit.output`), per user request; Hermes intentionally sets no output cap (server defaults apply). These client-side settings do not increase backend capacity.
 
@@ -32,6 +32,14 @@ This integration targets OpenAI Codex Desktop, not the separate consumer ChatGPT
 Original baselines remain immutable. Codex applies transactionally, preserves unrelated config/JSON fields, and records canonical JSON ownership separately from full expected transaction output. Edited JSON arrays are conservatively retained during deselection. Malformed config or filesystem failures are reported rather than overwritten silently.
 
 `update` retains installed executable path, replaces binary, then launches that binary with `config --apply`. Same-version and failed update attempts also reapply current config. Failures return nonzero. First upgrade from an older updater can still execute old reapply code; run `auranion config --apply` explicitly once afterward.
+
+## Daily auto-update
+
+Successful interactive setup registers a user-level daily task; `config --apply` does not. Windows uses PowerShell ScheduledTasks (00:00/midnight plus logon, limited interactive user), macOS a LaunchAgent (00:00/midnight plus RunAtLoad), Linux a persistent systemd user timer (00:00/midnight plus up to 15 minutes jitter) or crontab fallback (no missed-run catch-up). No daemon/root installation. Release matrix and installers cover ARM64/AMD64 on all three systems; native tests run before each release build.
+
+`schedule disable` persists `auto-update-disabled` in the Auranion data directory before scheduler cleanup; later setup respects opt-out. Explicit `schedule enable` clears it after registration. Tasks capture only config-path variables, including resolved Unix home/XDG roots, never credentials. Rerun registration after moving the binary or changing path overrides. Manual commands still use their current environment.
+
+Updater uses nonblocking update/config locks, strict semver, HTTPS-only requests, bounded metadata/download reads, exact asset size and GitHub SHA-256 verification, staged `--version` execution, and `self-replace`. Staging and backup live beside the user-writable installed binary. On returned replacement failure with a missing installed path, restore backup; preserve backup if recovery fails. This is not signature verification, a crash-proof transaction, or rollback after a successful replacement/config failure. Background runs suppress progress and child output; errors return nonzero. A failed reapply is retried on the next run, even when the binary is current.
 
 ## Verification scope
 

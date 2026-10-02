@@ -67,12 +67,12 @@ try {
   const { config } = await request('config/read', { includeLayers: false, cwd: home });
   assert.equal(config.model_provider, 'auranion');
   const { data: models } = await request('model/list', { includeHidden: false, cursor: null, limit: 100 });
-  assert.deepEqual(models.map(m => m.model), ['gpt-6-astra', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna']);
+  assert.deepEqual(models.map(m => m.model), ['gpt-6-astra', 'gpt-6.1-sol', 'gpt-5.6-terra', 'gpt-6-luna']);
   const started = await request('thread/start', { cwd: home, ephemeral: true, approvalPolicy: 'never', sandbox: 'read-only' });
   assert.equal(started.modelProvider, 'auranion');
   for (const model of models) {
     const efforts = model.supportedReasoningEfforts.map(e => e.reasoningEffort);
-    assert.deepEqual(efforts, model.model === 'gpt-5.6-luna'
+    assert.deepEqual(efforts, model.model === 'gpt-6-luna'
       ? ['low', 'medium', 'high', 'xhigh', 'max'] : ['low', 'medium', 'high', 'xhigh', 'max', 'ultra']);
     assert.equal(model.defaultReasoningEffort, 'medium');
     for (const effort of efforts) {

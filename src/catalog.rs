@@ -30,8 +30,8 @@ pub struct Model {
 }
 
 pub const FABLE_MODEL: &str = "claude-fable-5-1";
-pub const OPUS_MODEL: &str = "claude-opus-5";
-pub const SONNET_MODEL: &str = "claude-sonnet-5";
+pub const OPUS_MODEL: &str = "claude-opus-5-5";
+pub const SONNET_MODEL: &str = "claude-sonnet-5-5";
 pub const HAIKU_MODEL: &str = "claude-haiku-4-5-20251001";
 
 pub const CODEX_DEFAULT_MODEL: &str = "gpt-6-astra";
@@ -49,17 +49,13 @@ pub const ALPHA_MODEL: &str = "alpha";
 // Upstream routing and effort translation belong to agent.auranion.com.
 pub const CLAUDE_DESKTOP_MODELS: &[(&str, &str)] = &[
     ("claude-fable-5-1", "Claude Fable 5.1"),
-    ("claude-opus-5", "Claude Opus 5"),
-    ("claude-sonnet-5", "Claude Sonnet 5"),
+    ("claude-opus-5-5", "Claude Opus 5.5"),
+    ("claude-sonnet-5-5", "Claude Sonnet 5.5"),
     ("claude-haiku-4-5-20251001", "Claude Haiku 4.5"),
 ];
 
-pub const CODEX_DESKTOP_MODELS: &[&str] = &[
-    "gpt-6-astra",
-    "gpt-5.6-sol",
-    "gpt-5.6-terra",
-    "gpt-5.6-luna",
-];
+pub const CODEX_DESKTOP_MODELS: &[&str] =
+    &["gpt-6-astra", "gpt-6.1-sol", "gpt-5.6-terra", "gpt-6-luna"];
 
 pub const MODELS: &[Model] = &[
     Model {
@@ -145,7 +141,7 @@ pub const CODEX_MODELS: &[Model] = &[
         codex_desktop_alias: "gpt-6-astra",
         codex_desktop_reasoning_efforts: &["low", "medium", "high", "xhigh", "max", "ultra"],
         score: None,
-        context: Some(1_000_000),
+        context: Some(256_000),
         output: Some(128_000),
         reasoning: true,
         reasoning_efforts: &["none", "minimal", "low", "medium", "high", "xhigh", "max"],
@@ -156,14 +152,14 @@ pub const CODEX_MODELS: &[Model] = &[
         forced_effort: None,
     },
     Model {
-        upstream: "gpt-5.6-sol",
-        label: "GPT 5.6 Sol",
+        upstream: "gpt-6.1-sol",
+        label: "GPT 6 Sol",
         desktop_alias: "claude-opus-4-8",
-        desktop_label: "GPT 5.6 Sol",
-        codex_desktop_alias: "gpt-5.6-sol",
+        desktop_label: "GPT 6 Sol",
+        codex_desktop_alias: "gpt-6.1-sol",
         codex_desktop_reasoning_efforts: &["low", "medium", "high", "xhigh", "max", "ultra"],
         score: Some(59),
-        context: Some(372_000),
+        context: Some(256_000),
         output: Some(128_000),
         reasoning: true,
         reasoning_efforts: &["none", "minimal", "low", "medium", "high", "xhigh", "max"],
@@ -181,7 +177,7 @@ pub const CODEX_MODELS: &[Model] = &[
         codex_desktop_alias: "gpt-5.6-terra",
         codex_desktop_reasoning_efforts: &["low", "medium", "high", "xhigh", "max", "ultra"],
         score: Some(56),
-        context: Some(272_000),
+        context: Some(256_000),
         output: Some(128_000),
         reasoning: true,
         reasoning_efforts: &["none", "minimal", "low", "medium", "high", "xhigh", "max"],
@@ -192,14 +188,14 @@ pub const CODEX_MODELS: &[Model] = &[
         forced_effort: None,
     },
     Model {
-        upstream: "gpt-5.6-luna",
-        label: "GPT 5.6 Luna",
+        upstream: "gpt-6-luna",
+        label: "GPT 6 Luna",
         desktop_alias: "claude-sonnet-4-6",
-        desktop_label: "GPT 5.6 Luna",
-        codex_desktop_alias: "gpt-5.6-luna",
+        desktop_label: "GPT 6 Luna",
+        codex_desktop_alias: "gpt-6-luna",
         codex_desktop_reasoning_efforts: &["low", "medium", "high", "xhigh", "max"],
         score: Some(51),
-        context: Some(272_000),
+        context: Some(256_000),
         output: Some(128_000),
         reasoning: true,
         reasoning_efforts: &["none", "minimal", "low", "medium", "high", "xhigh", "max"],
@@ -229,8 +225,8 @@ mod tests {
     #[test]
     fn claude_code_roles_match_gateway_tiers() {
         assert_eq!(FABLE_MODEL, "claude-fable-5-1");
-        assert_eq!(OPUS_MODEL, "claude-opus-5");
-        assert_eq!(SONNET_MODEL, "claude-sonnet-5");
+        assert_eq!(OPUS_MODEL, "claude-opus-5-5");
+        assert_eq!(SONNET_MODEL, "claude-sonnet-5-5");
         assert_eq!(HAIKU_MODEL, "claude-haiku-4-5-20251001");
         assert_eq!(
             CLAUDE_DESKTOP_MODELS
@@ -297,9 +293,9 @@ mod tests {
     fn codex_desktop_aliases_route_to_verified_targets() {
         let expected = [
             ("gpt-6-astra", "gpt-6-astra"),
-            ("gpt-5.6-sol", "gpt-5.6-sol"),
+            ("gpt-6.1-sol", "gpt-6.1-sol"),
             ("gpt-5.6-terra", "gpt-5.6-terra"),
-            ("gpt-5.6-luna", "gpt-5.6-luna"),
+            ("gpt-6-luna", "gpt-6-luna"),
         ];
         let aliases: HashSet<_> = CODEX_MODELS
             .iter()
@@ -323,14 +319,14 @@ mod tests {
                 &["low", "medium", "high", "xhigh", "max", "ultra"] as &[&str],
             ),
             (
-                "gpt-5.6-sol",
+                "gpt-6.1-sol",
                 &["low", "medium", "high", "xhigh", "max", "ultra"],
             ),
             (
                 "gpt-5.6-terra",
                 &["low", "medium", "high", "xhigh", "max", "ultra"],
             ),
-            ("gpt-5.6-luna", &["low", "medium", "high", "xhigh", "max"]),
+            ("gpt-6-luna", &["low", "medium", "high", "xhigh", "max"]),
         ];
 
         for (alias, efforts) in expected {

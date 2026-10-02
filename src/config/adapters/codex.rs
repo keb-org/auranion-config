@@ -1396,7 +1396,7 @@ mod tests {
             write_json(
                 &catalog,
                 &json!({"user": true, "models": [
-                    {"slug": "gpt-5.6-luna", "priority": -10},
+                    {"slug": "gpt-6-luna", "priority": -10},
                     {"slug": "gpt-6-astra", "display_name": "broken", "extra": "keep"},
                     {"slug": "gpt-6-astra"}, {"slug": "gpt-5.5"}
                 ]}),
@@ -1586,7 +1586,7 @@ mod tests {
         fs::create_dir_all(catalog.parent().unwrap()).unwrap();
         fs::write(
             &config,
-            "model = \"cx/gpt-5.6-sol\"\nmodel_provider = \"auranion\"\n",
+            "model = \"cx/gpt-6-sol\"\nmodel_provider = \"auranion\"\n",
         )
         .unwrap();
         fs::write(&catalog, "{\"models\":[]}").unwrap();

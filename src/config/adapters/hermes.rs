@@ -103,14 +103,13 @@ fn migrate_tier_default(root: &mut YamlValue) {
         return;
     }
     // ponytail: migrate only retired tier defaults; leave other provider IDs alone.
-    if let Some(default) = model.get_mut("default") {
-        if let Some(tier) = default
+    if let Some(default) = model.get_mut("default")
+        && let Some(tier) = default
             .as_str()
             .and_then(|id| id.strip_prefix("auranion/"))
             .filter(|id| MODELS.iter().any(|model| model.upstream == *id))
-        {
-            *default = YamlValue::String(tier.into());
-        }
+    {
+        *default = YamlValue::String(tier.into());
     }
 }
 

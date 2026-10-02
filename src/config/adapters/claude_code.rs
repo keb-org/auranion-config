@@ -140,7 +140,9 @@ mod tests {
         let settings = read_json(&path).unwrap();
         let environment = settings.get("env").and_then(Value::as_object).unwrap();
         assert_eq!(
-            environment.get("ANTHROPIC_BASE_URL").and_then(Value::as_str),
+            environment
+                .get("ANTHROPIC_BASE_URL")
+                .and_then(Value::as_str),
             Some("https://agent.auranion.com")
         );
         assert_eq!(

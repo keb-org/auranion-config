@@ -7,8 +7,8 @@ Four slots per Claude/Codex integration, strongest to lightest. Requests send ID
 | Model ID | Label |
 | --- | --- |
 | `claude-fable-5-1` | Claude Fable 5.1 |
-| `claude-opus-5` | Claude Opus 5 |
-| `claude-sonnet-5` | Claude Sonnet 5 |
+| `claude-opus-5-5` | Claude Opus 5.5 |
+| `claude-sonnet-5-5` | Claude Sonnet 5.5 |
 | `claude-haiku-4-5-20251001` | Claude Haiku 4.5 |
 
 Claude Desktop writes four `inferenceModels` in this order, with `modelDiscoveryEnabled: false`, `supports1m: false`, and existing direct gateway authentication.
@@ -20,9 +20,9 @@ Claude Code writes ordered `modelPicker.options`, `replaceBuiltInOptions: true`,
 | Model ID | Native efforts |
 | --- | --- |
 | `gpt-6-astra` | low, medium, high, xhigh, max, ultra |
-| `gpt-5.6-sol` | low, medium, high, xhigh, max, ultra |
+| `gpt-6-sol` | low, medium, high, xhigh, max, ultra |
 | `gpt-5.6-terra` | low, medium, high, xhigh, max, ultra |
-| `gpt-5.6-luna` | low, medium, high, xhigh, max |
+| `gpt-6-luna` | low, medium, high, xhigh, max |
 
 Both use native `config.toml` with `model_provider = "auranion"`, default `model = "gpt-6-astra"`, and `model_catalog_json` pointing to `model-catalogs/auranion.json`. Catalog array order and priority agree. `model/list` supplies native model picker and effort choices; medium is catalog default. Ultra is native orchestration and sends max upstream.
 

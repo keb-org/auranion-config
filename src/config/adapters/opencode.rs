@@ -339,7 +339,10 @@ mod tests {
             assert_eq!(entry.get("name").and_then(Value::as_str), Some(label));
             assert!(entry.get("id").is_none());
             assert!(entry.get("variants").is_none());
-            assert_eq!(entry["limit"], json!({ "context": 256_000, "output": 64_000 }));
+            assert_eq!(
+                entry["limit"],
+                json!({ "context": 256_000, "output": 64_000 })
+            );
         }
         std::fs::remove_dir_all(&dir).unwrap();
     }
