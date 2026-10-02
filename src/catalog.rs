@@ -153,9 +153,9 @@ pub const CODEX_MODELS: &[Model] = &[
     },
     Model {
         upstream: "gpt-6.1-sol",
-        label: "GPT 6 Sol",
+        label: "GPT 6.1 Sol",
         desktop_alias: "claude-opus-4-8",
-        desktop_label: "GPT 6 Sol",
+        desktop_label: "GPT 6.1 Sol",
         codex_desktop_alias: "gpt-6.1-sol",
         codex_desktop_reasoning_efforts: &["low", "medium", "high", "xhigh", "max", "ultra"],
         score: Some(59),
