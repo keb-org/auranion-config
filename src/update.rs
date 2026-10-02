@@ -44,14 +44,24 @@ pub(super) fn run(background: bool) -> Result<()> {
     if background && data.join(DISABLED).try_exists()? {
         return Ok(());
     }
-    update_and_reapply(
+    let result = update_and_reapply(
         &executable,
         |path| {
             let _config = config_lock()?;
             update_binary(path, background)
         },
         |path| reapply_saved_config(path, background),
-    )
+    );
+    // Enable scheduler after successful update for users upgrading from old versions.
+    // Already holds update.lock; check disabled marker and install directly.
+    if result.is_ok() && !data.join(DISABLED).try_exists()? {
+        if let Err(error) = schedule::install(&executable) {
+            if !background {
+                eprintln!("Auto-update scheduler setup failed: {error:#}");
+            }
+        }
+    }
+    result
 }
 
 pub(crate) fn config_lock() -> Result<File> {
